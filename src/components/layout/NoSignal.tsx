@@ -1,10 +1,13 @@
-import { FrameLayer } from "../layers/FrameLayer";
+import {FrameLayer} from "../layers/FrameLayer";
 
+interface NoSignalProps {
+  currentPlayerSignal?: number; // playerSignal: 9-11
+}
 
-export const NoSignal = () => {
+export const NoSignal = ({currentPlayerSignal}: NoSignalProps) => {
   return (
     <>
-      <FrameLayer/>
+      <FrameLayer currentPlayerSignal={currentPlayerSignal} />
     </>
   );
 };

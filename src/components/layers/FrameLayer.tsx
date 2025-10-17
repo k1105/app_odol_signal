@@ -1,19 +1,22 @@
 interface FrameLayerProps {
-  current?: number;
+  currentPlayerSignal?: number; // playerSignal: 9-11
 }
 
-export const FrameLayer = ({current}: FrameLayerProps) => {
+export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
   const imagePath = "/assets/frame/base.png";
 
-  // 信号ID 9-11に応じてプレイヤー名画像のパスを決定
-  const getPlayerNameImage = (id: number | undefined): string | null => {
-    if (id === 9) return "/assets/player_name/blue.png";
-    if (id === 10) return "/assets/player_name/yellow.png";
-    if (id === 11) return "/assets/player_name/red.png";
+  // playerSignal 9-11に応じてプレイヤー名画像のパスを決定
+  // playerSignalは独立しており、effectSignalに影響されない
+  const getPlayerNameImage = (
+    playerSignal: number | undefined
+  ): string | null => {
+    if (playerSignal === 9) return "/assets/player_name/blue.png";
+    if (playerSignal === 10) return "/assets/player_name/yellow.png";
+    if (playerSignal === 11) return "/assets/player_name/red.png";
     return null;
   };
 
-  const playerNameImage = getPlayerNameImage(current);
+  const playerNameImage = getPlayerNameImage(currentPlayerSignal);
 
   return (
     <div

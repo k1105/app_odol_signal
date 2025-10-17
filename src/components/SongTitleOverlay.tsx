@@ -2,11 +2,19 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import indexInformation from "../../public/index_information.json";
 
 export interface SongTitleOverlayProps {
-  songId: number;
+  effectSignal: number; // effectSignal: 0-8
+  playerSignal?: number; // playerSignal: 9-11
 }
 
-const getSongTitle = (songId: number): string => {
-  const songInfo = indexInformation.find((item) => item.index === songId);
+const getSongTitle = (effectSignal: number, playerSignal?: number): string => {
+  // playerSignalが未設定の場合はデフォルトで9を使用
+  const targetPlayerSignal = playerSignal ?? 9;
+
+  const songInfo = indexInformation.find(
+    (item) =>
+      item.effectSignal === effectSignal &&
+      item.playerSignal === targetPlayerSignal
+  );
   return songInfo ? songInfo.title_index : "";
 };
 
@@ -51,7 +59,10 @@ const FLIP_BAND_CH = 10; // 前線から何文字ぶんを“パタパタ帯”�
 const FLIP_RATE_HZ = 14; // パタパタ速度（Hz目安）
 const FLIP_SET = ["A", "S", "P", "/", "\\", "|", "-", "+", "*"]; // █ 以外で巡回
 
-export const SongTitleOverlay: React.FC<SongTitleOverlayProps> = ({songId}) => {
+export const SongTitleOverlay: React.FC<SongTitleOverlayProps> = ({
+  effectSignal,
+  playerSignal,
+}) => {
   const [rawText, setRawText] = useState<string>("");
   const [visible, setVisible] = useState(false);
   const [phase, setPhase] = useState<0 | 1 | 2>(0); // 0: appear, 1: steady, 2: fade
@@ -61,13 +72,13 @@ export const SongTitleOverlay: React.FC<SongTitleOverlayProps> = ({songId}) => {
   const rafRef = useRef<number | null>(null);
   const elapsedRef = useRef<number>(0);
 
-  const isOutOfBound = getSongTitle(songId) === "";
+  const isOutOfBound = getSongTitle(effectSignal, playerSignal) === "";
 
   useEffect(() => {
     if (isOutOfBound) return;
-    const title = getSongTitle(songId);
+    const title = getSongTitle(effectSignal, playerSignal);
     loadTextFile(title).then(setRawText);
-  }, [songId, isOutOfBound]);
+  }, [effectSignal, playerSignal, isOutOfBound]);
 
   useEffect(() => {
     console.log(phase);

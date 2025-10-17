@@ -26,10 +26,14 @@ staticImgMap.set(17, "");
 staticImgMap.set(18, "");
 
 interface StaticLayerProps {
-  songId: number;
+  effectSignal: number; // effectSignal: 0-8
+  playerSignal?: number; // playerSignal: 9-11
 }
 
-export const StaticLayer = ({songId}: StaticLayerProps) => {
+export const StaticLayer = ({effectSignal}: StaticLayerProps) => {
+  // 現在は単純にeffectSignalをマッピングに使用
+  // 将来的にplayerSignalに応じて異なる静的画像を使用する場合は、propsにplayerSignalを追加
+  const songId = effectSignal;
   const imagePath =
     staticImgMap.get(songId) === "default" || ""
       ? "/assets/static/blueberry_gum.gif"

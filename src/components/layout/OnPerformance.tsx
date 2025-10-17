@@ -2,15 +2,22 @@ import {FrameLayer} from "../layers/FrameLayer";
 import {StaticLayer} from "../layers/StaticLayer";
 
 interface OnPerformanceProps {
-  current: number;
+  currentEffectSignal: number; // effectSignal: 0-8
+  currentPlayerSignal?: number; // playerSignal: 9-11
 }
 
-export const OnPerformance = ({current}: OnPerformanceProps) => {
+export const OnPerformance = ({
+  currentEffectSignal,
+  currentPlayerSignal,
+}: OnPerformanceProps) => {
   return (
     <>
-      <StaticLayer songId={current} />
+      <StaticLayer
+        effectSignal={currentEffectSignal}
+        playerSignal={currentPlayerSignal}
+      />
 
-      <FrameLayer current={current} />
+      <FrameLayer currentPlayerSignal={currentPlayerSignal} />
     </>
   );
 };

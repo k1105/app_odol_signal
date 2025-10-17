@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {AudioReceiver} from "./components/AudioReceiver";
 import {InitialScreen} from "./components/InitialScreen";
 import {
@@ -14,7 +14,7 @@ import {CameraCanvas} from "./components/layers/CameraCanvas";
 import {Countdown} from "./components/layout/Countdown";
 
 /* ---------- 定数 ---------- */
-const NUM_EFFECTS = 16;
+const NUM_EFFECTS = 9;
 
 function FullCameraApp() {
   /* ---------- Refs & State ---------- */
@@ -22,7 +22,10 @@ function FullCameraApp() {
   const initedRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [current, setCurrent] = useState(-1); // 初期値は-1（エフェクトなし）
+  const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）
+  const [currentPlayerSignal, setCurrentPlayerSignal] = useState<
+    number | undefined
+  >(undefined); // playerSignal: 9-11（オーバーレイ切り替え）
   const [ready, setReady] = useState(false);
   const [isNoSignalDetected, setIsNoSignalDetected] = useState(true); // 初期状態では信号なし
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
@@ -70,17 +73,24 @@ function FullCameraApp() {
     }
   };
 
-  const onNoSignal = () => {
+  const onNoSignal = useCallback(() => {
     if (layout !== "Countdown") {
       setLayout("NoSignal");
-      setCurrent(-1);
+      setCurrentEffectSignal(-1);
     }
-  };
+  }, [layout]);
 
   const handleEffectDetected = (effectId: number) => {
     setIsNoSignalDetected(false);
     if (isBeginingSongRef.current) return;
     if (layout === "Countdown") return; // カウントダウン中は何もしない
+
+    // 信号9-11はplayerSignal（オーバーレイ切り替え）
+    if (effectId >= 9 && effectId <= 11) {
+      setCurrentPlayerSignal(effectId);
+      return;
+    }
+
     if (effectId === 14) {
       onBeginSignal();
       return;
@@ -90,13 +100,14 @@ function FullCameraApp() {
       return;
     }
     if (isHalfTimeEllapsed) {
-      beginFlagRef.current = current !== effectId + 10 ? false : true;
-      setCurrent(effectId + 10);
+      beginFlagRef.current =
+        currentEffectSignal !== effectId + 10 ? false : true;
+      setCurrentEffectSignal(effectId + 10);
       setLayout("OnPerformance");
       return;
     }
-    beginFlagRef.current = current !== effectId ? false : true;
-    setCurrent(effectId);
+    beginFlagRef.current = currentEffectSignal !== effectId ? false : true;
+    setCurrentEffectSignal(effectId);
     setLayout("OnPerformance");
   };
 
@@ -107,7 +118,7 @@ function FullCameraApp() {
 
   const handleEffectChange = (effect: number) => {
     if (layout === "Countdown") return; // カウントダウン中は何もしない
-    setCurrent(effect);
+    setCurrentEffectSignal(effect);
   };
 
   // 新しいハンバーガーメニュー用の関数
@@ -127,8 +138,8 @@ function FullCameraApp() {
 
   const handleSimulatorIndexChange = (index: number) => {
     if (layout === "Countdown") return; // カウントダウン中は何もしない
-    beginFlagRef.current = current !== index ? false : true;
-    setCurrent(index);
+    beginFlagRef.current = currentEffectSignal !== index ? false : true;
+    setCurrentEffectSignal(index);
   };
 
   // 権限要求関数
@@ -257,7 +268,7 @@ function FullCameraApp() {
     if (isNoSignalDetected && !isBeginingSongRef) {
       onNoSignal();
     }
-  }, [isNoSignalDetected]);
+  }, [isNoSignalDetected, onNoSignal]);
 
   // time
   useEffect(() => {
@@ -364,19 +375,30 @@ function FullCameraApp() {
           <>
             <CameraCanvas
               videoRef={videoRef}
-              current={current}
+              currentEffectSignal={currentEffectSignal}
+              currentPlayerSignal={currentPlayerSignal}
               ready={ready}
               isNoSignalDetected={isNoSignalDetected}
               onEffectChange={handleEffectChange}
             />
 
-            {layout === "OnPerformance" && <OnPerformance current={current} />}
-
-            {layout === "BeginPerformance" && (
-              <BeginPerformance songId={current} />
+            {layout === "OnPerformance" && (
+              <OnPerformance
+                currentEffectSignal={currentEffectSignal}
+                currentPlayerSignal={currentPlayerSignal}
+              />
             )}
 
-            {layout === "NoSignal" && <NoSignal />}
+            {layout === "BeginPerformance" && (
+              <BeginPerformance
+                currentEffectSignal={currentEffectSignal}
+                currentPlayerSignal={currentPlayerSignal}
+              />
+            )}
+
+            {layout === "NoSignal" && (
+              <NoSignal currentPlayerSignal={currentPlayerSignal} />
+            )}
           </>
         )}
 
@@ -391,12 +413,12 @@ function FullCameraApp() {
         {/* ハンバーガーメニュー */}
         <NewHamburgerMenu
           currentState={layout}
-          currentIndex={current}
+          currentIndex={currentEffectSignal}
           signalLog={signalLog}
           onBeginSignal={handleBeginSignal}
           onFinishSignal={handleFinishSignal}
           onIndexChange={handleSimulatorIndexChange}
-          currentSimulatorIndex={current}
+          currentSimulatorIndex={currentEffectSignal}
           countdownDate={countdownDate}
           countdownTime={countdownTime}
           halfTime={halfTime}

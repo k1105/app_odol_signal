@@ -1,15 +1,21 @@
 import {FrameLayer} from "../layers/FrameLayer";
-import {
-  SongTitleOverlay,
-  type SongTitleOverlayProps,
-} from "../SongTitleOverlay";
+import {SongTitleOverlay} from "../SongTitleOverlay";
 
-export const BeginPerformance = ({songId}: SongTitleOverlayProps) => {
+interface BeginPerformanceProps {
+  currentEffectSignal: number; // effectSignal: 0-8
+  currentPlayerSignal?: number; // playerSignal: 9-11
+}
+
+export const BeginPerformance = ({
+  currentEffectSignal,
+  currentPlayerSignal,
+}: BeginPerformanceProps) => {
   return (
     <>
-      <FrameLayer/>
+      <FrameLayer currentPlayerSignal={currentPlayerSignal} />
       <SongTitleOverlay
-        songId={songId}
+        effectSignal={currentEffectSignal}
+        playerSignal={currentPlayerSignal}
       />
     </>
   );

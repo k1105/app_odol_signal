@@ -173,7 +173,11 @@ export function AudioReceiver({
         lastSignalTimeRef.current = Date.now();
 
         // 利用可能なエフェクトの範囲内かチェック
-        if (detectedChannel < availableEffects) {
+        // 信号9-11は特別な信号として常に処理する
+        if (
+          detectedChannel < availableEffects ||
+          (detectedChannel >= 9 && detectedChannel <= 11)
+        ) {
           console.log(`AudioReceiver: エフェクト ${detectedChannel} を実行`);
           onEffectDetected(detectedChannel);
           lastDetectedEffectRef.current = detectedChannel;

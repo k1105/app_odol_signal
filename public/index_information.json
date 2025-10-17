@@ -1,6 +1,7 @@
 [
   {
-    "index": 0,
+    "playerSignal": 9,
+    "effectSignal": 0,
     "title_index": "toxic_invasion",
     "title": "TOXiC iNVASiON",
     "effect": {
@@ -8,7 +9,8 @@
     }
   },
   {
-    "index": 1,
+    "playerSignal": 9,
+    "effectSignal": 1,
     "title_index": "black_nails",
     "title": "Black Nails",
     "effect": {
@@ -16,7 +18,8 @@
     }
   },
   {
-    "index": 2,
+    "playerSignal": 9,
+    "effectSignal": 2,
     "title_index": "no_colors",
     "title": "NO COLOR S",
     "effect": {
@@ -25,7 +28,8 @@
     }
   },
   {
-    "index": 3,
+    "playerSignal": 9,
+    "effectSignal": 3,
     "title_index": "totsugeki",
     "title": "TOTSUGEKI!!!!!",
     "effect": {
@@ -34,7 +38,8 @@
     }
   },
   {
-    "index": 4,
+    "playerSignal": 9,
+    "effectSignal": 4,
     "title_index": "make_a_move",
     "title": "MAKE A MOVE",
     "effect": {
@@ -43,7 +48,8 @@
     }
   },
   {
-    "index": 5,
+    "playerSignal": 9,
+    "effectSignal": 5,
     "title_index": "I_wont_let_you_go",
     "title": "I won't let you go",
     "effect": {
@@ -51,7 +57,8 @@
     }
   },
   {
-    "index": 6,
+    "playerSignal": 9,
+    "effectSignal": 6,
     "title_index": "darma",
     "title": "darma",
     "effect": {
@@ -59,7 +66,8 @@
     }
   },
   {
-    "index": 7,
+    "playerSignal": 9,
+    "effectSignal": 7,
     "title_index": "hata",
     "title": "HATA",
     "effect": {
@@ -67,7 +75,8 @@
     }
   },
   {
-    "index": 8,
+    "playerSignal": 9,
+    "effectSignal": 8,
     "title_index": "sexual_conversation",
     "title": "SEXUAL CONVERSATiON",
     "effect": {
@@ -75,75 +84,171 @@
     }
   },
   {
-    "index": 9,
-    "title_index": "tokyo_sky_blues",
-    "title": "Tokyo Sky Blues",
+    "playerSignal": 10,
+    "effectSignal": 0,
+    "title_index": "toxic_invasion",
+    "title": "TOXiC iNVASiON",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 10,
-    "title_index": "please",
-    "title": "PLEASE!!!",
+    "playerSignal": 10,
+    "effectSignal": 1,
+    "title_index": "black_nails",
+    "title": "Black Nails",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 11,
-    "title_index": "anyway",
-    "title": "Anyway",
+    "playerSignal": 10,
+    "effectSignal": 2,
+    "title_index": "no_colors",
+    "title": "NO COLOR S",
+    "effect": {
+      "type": "badTV",
+      "badTVIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": 10,
+    "effectSignal": 3,
+    "title_index": "totsugeki",
+    "title": "TOTSUGEKI!!!!!",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": 10,
+    "effectSignal": 4,
+    "title_index": "make_a_move",
+    "title": "MAKE A MOVE",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "intense"
+    }
+  },
+  {
+    "playerSignal": 10,
+    "effectSignal": 5,
+    "title_index": "I_wont_let_you_go",
+    "title": "I won't let you go",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 12,
-    "title_index": "I_hate_u",
-    "title": "I HATE U",
+    "playerSignal": 10,
+    "effectSignal": 6,
+    "title_index": "darma",
+    "title": "darma",
+    "effect": {
+      "type": "mosaic"
+    }
+  },
+  {
+    "playerSignal": 10,
+    "effectSignal": 7,
+    "title_index": "hata",
+    "title": "HATA",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 13,
-    "title_index": "blueberry_gum",
-    "title": "Blueberry Gum",
+    "playerSignal": 10,
+    "effectSignal": 8,
+    "title_index": "sexual_conversation",
+    "title": "SEXUAL CONVERSATiON",
+    "effect": {
+      "type": "typography"
+    }
+  },
+  {
+    "playerSignal": 11,
+    "effectSignal": 0,
+    "title_index": "toxic_invasion",
+    "title": "TOXiC iNVASiON",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 14,
-    "title_index": "heavens_seven",
-    "title": "Heaven's Seven",
+    "playerSignal": 11,
+    "effectSignal": 1,
+    "title_index": "black_nails",
+    "title": "Black Nails",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 15,
-    "title_index": "get_new_mirai",
-    "title": "Get New ミライ",
+    "playerSignal": 11,
+    "effectSignal": 2,
+    "title_index": "no_colors",
+    "title": "NO COLOR S",
+    "effect": {
+      "type": "badTV",
+      "badTVIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": 11,
+    "effectSignal": 3,
+    "title_index": "totsugeki",
+    "title": "TOTSUGEKI!!!!!",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": 11,
+    "effectSignal": 4,
+    "title_index": "make_a_move",
+    "title": "MAKE A MOVE",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "intense"
+    }
+  },
+  {
+    "playerSignal": 11,
+    "effectSignal": 5,
+    "title_index": "I_wont_let_you_go",
+    "title": "I won't let you go",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 16,
-    "title_index": "too_young_to_get_it_too_fast_to_live",
-    "title": "Too young to get it, too fast to live",
+    "playerSignal": 11,
+    "effectSignal": 6,
+    "title_index": "darma",
+    "title": "darma",
+    "effect": {
+      "type": "mosaic"
+    }
+  },
+  {
+    "playerSignal": 11,
+    "effectSignal": 7,
+    "title_index": "hata",
+    "title": "HATA",
     "effect": {
       "type": "normal"
     }
   },
   {
-    "index": 17,
-    "title_index": "hyper_cracker",
-    "title": "Hyper Cracker",
+    "playerSignal": 11,
+    "effectSignal": 8,
+    "title_index": "sexual_conversation",
+    "title": "SEXUAL CONVERSATiON",
     "effect": {
-      "type": "normal"
+      "type": "typography"
     }
   }
 ]

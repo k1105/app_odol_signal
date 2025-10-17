@@ -13,7 +13,8 @@ import indexInformation from "../../../public/index_information.json";
 
 export interface CameraCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  current: number;
+  currentEffectSignal: number; // effectSignal: 0-8
+  currentPlayerSignal?: number; // playerSignal: 9-11
   ready: boolean;
   isNoSignalDetected?: boolean;
   onEffectChange?: (effect: number) => void;
@@ -29,10 +30,25 @@ interface EffectDefinition {
 }
 
 // index_information.jsonからエフェクト定義を動的に取得する関数
-const getEffectDefinition = (songId: number): EffectDefinition => {
-  const songInfo = indexInformation.find((item) => item.index === songId);
-  console.log(songInfo);
-  console.log(songInfo?.effect);
+// playerSignalとeffectSignalの組み合わせで検索
+const getEffectDefinition = (
+  effectSignal: number,
+  playerSignal?: number
+): EffectDefinition => {
+  // playerSignalが未設定の場合はデフォルトで9を使用
+  const targetPlayerSignal = playerSignal ?? 9;
+
+  const songInfo = indexInformation.find(
+    (item) =>
+      item.effectSignal === effectSignal &&
+      item.playerSignal === targetPlayerSignal
+  );
+  console.log("getEffectDefinition:", {
+    effectSignal,
+    playerSignal: targetPlayerSignal,
+    songInfo,
+  });
+
   if (!songInfo || !songInfo.effect) {
     return {type: "normal"};
   }
@@ -189,7 +205,8 @@ function getCssSize(el: HTMLCanvasElement) {
 
 export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   videoRef,
-  current,
+  currentEffectSignal,
+  currentPlayerSignal,
   ready,
   fitMode = "contain",
 }) => {
@@ -224,8 +241,8 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
 
   // Effect def
   const effectDef = useMemo<EffectDefinition>(() => {
-    return getEffectDefinition(current);
-  }, [current]);
+    return getEffectDefinition(currentEffectSignal, currentPlayerSignal);
+  }, [currentEffectSignal, currentPlayerSignal]);
 
   // WebGL init
   const initializeWebGL = () => {
@@ -428,7 +445,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             gl,
             program: badTVProgramRef.current,
             time: (t % 10000) * 0.001,
-            config: getBadTVConfigForEffect(current),
+            config: getBadTVConfigForEffect(currentEffectSignal),
           });
           programToUse = badTVProgramRef.current;
           if (videoTexRef.current && lastNearestRef.current) {
@@ -443,7 +460,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             gl,
             program: psychedelicProgramRef.current,
             time: (t % 10000) * 0.001,
-            config: getPsychedelicConfigForEffect(current),
+            config: getPsychedelicConfigForEffect(currentEffectSignal),
           });
           programToUse = psychedelicProgramRef.current;
           if (videoTexRef.current && lastNearestRef.current) {
@@ -452,7 +469,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
           }
         } else if (effectDef.type === "mosaic" && mosaicProgramRef.current) {
           const nowSec = t * 0.001;
-          const cfg = getMosaicConfigForEffect(current);
+          const cfg = getMosaicConfigForEffect(currentEffectSignal);
           const active =
             mosaicEffectStartRef.current >= 0 &&
             nowSec - mosaicEffectStartRef.current < cfg.effectDuration;
@@ -520,7 +537,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [ready, videoRef, effectDef, current, fitMode]);
+  }, [ready, videoRef, effectDef, currentEffectSignal, fitMode]);
 
   /* ------------------------------ Input ------------------------------ */
 
@@ -532,7 +549,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     }
 
     // それ以外は従来のワンショット系
-    const cfg = getMosaicConfigForEffect(current);
+    const cfg = getMosaicConfigForEffect(currentEffectSignal);
     mosaicEffectStartRef.current = performance.now() / 1000;
     mosaicAngleRef.current = Math.random() * Math.PI * 2;
 

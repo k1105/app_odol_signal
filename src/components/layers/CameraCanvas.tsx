@@ -2,11 +2,20 @@ import {useEffect, useMemo, useRef} from "react";
 import {getBadTVConfigForEffect} from "../../utils/badTVConfig";
 import {getPsychedelicConfigForEffect} from "../../utils/psychedelicConfig";
 import {getMosaicConfigForEffect} from "../../utils/mosaicConfig";
+import {getSparkleConfigForEffect} from "../../utils/sparkleConfig";
 import {applyBadTVShader} from "../../utils/badTVShader";
 import {applyPsychedelicShader} from "../../utils/psychedelicShader";
 import {applyMosaicShader} from "../../utils/mosaicShader";
+import {applySparkleShader} from "../../utils/sparkleShader";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
+import {
+  ensureTypographyResources,
+  drawTypographyToCanvas,
+  uploadTypographyTexture,
+  randomizeTypographyTargets,
+  type TypographyResources,
+} from "../../utils/typographyConfig";
 import indexInformation from "../../../public/index_information.json";
 
 /* ============================= Types & Config ============================= */
@@ -22,7 +31,13 @@ export interface CameraCanvasProps {
 }
 
 /** 効果タイプ */
-type EffectKind = "badTV" | "psychedelic" | "mosaic" | "typography" | "normal";
+type EffectKind =
+  | "badTV"
+  | "psychedelic"
+  | "mosaic"
+  | "typography"
+  | "sparkle"
+  | "normal";
 interface EffectDefinition {
   type: EffectKind;
   badTVIntensity?: "subtle" | "moderate" | "heavy" | "extreme";
@@ -35,17 +50,18 @@ const getEffectDefinition = (
   effectSignal: number,
   playerSignal?: number
 ): EffectDefinition => {
-  // playerSignalが未設定の場合はデフォルトで9を使用
-  const targetPlayerSignal = playerSignal ?? 9;
+  // playerSignalが未設定の場合は何も表示しない
+  if (playerSignal === undefined) {
+    return {type: "normal"};
+  }
 
   const songInfo = indexInformation.find(
     (item) =>
-      item.effectSignal === effectSignal &&
-      item.playerSignal === targetPlayerSignal
+      item.effectSignal === effectSignal && item.playerSignal === playerSignal
   );
   console.log("getEffectDefinition:", {
     effectSignal,
-    playerSignal: targetPlayerSignal,
+    playerSignal,
     songInfo,
   });
 
@@ -159,49 +175,9 @@ function sizeCanvasToDisplay(
   }
 }
 
-/* ============================= Typography (ASP) ============================= */
-
-class Mover {
-  pos = {x: 0, y: 0};
-  vel = {x: 0, y: 0};
-  target = {x: 0, y: 0};
-  size = 48;
-  sizeVel = 0;
-  targetSize = 48;
-  k = 0.1;
-  damping = 0.8;
-  constructor(x: number, y: number, size: number) {
-    this.pos = {x, y};
-    this.target = {x, y};
-    this.size = size;
-    this.targetSize = size;
-  }
-  setTarget(x: number, y: number, size: number) {
-    this.target = {x, y};
-    this.targetSize = size;
-  }
-  update() {
-    // 位置のスプリング
-    const fx = (this.target.x - this.pos.x) * this.k;
-    const fy = (this.target.y - this.pos.y) * this.k;
-    this.vel.x = (this.vel.x + fx) * this.damping;
-    this.vel.y = (this.vel.y + fy) * this.damping;
-    this.pos.x += this.vel.x;
-    this.pos.y += this.vel.y;
-    // サイズのスプリング
-    const fs = (this.targetSize - this.size) * this.k;
-    this.sizeVel = (this.sizeVel + fs) * this.damping;
-    this.size += this.sizeVel;
-  }
-}
-
-function getCssSize(el: HTMLCanvasElement) {
-  const w = el.clientWidth || el.offsetWidth || window.innerWidth;
-  const h = el.clientHeight || el.offsetHeight || window.innerHeight;
-  return {w, h};
-}
-
 /* ============================= Component ============================= */
+
+const TYPOGRAPHY_LETTERS = ["A", "S", "P"];
 
 export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   videoRef,
@@ -218,10 +194,15 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   const badTVProgramRef = useRef<WebGLProgram | null>(null);
   const psychedelicProgramRef = useRef<WebGLProgram | null>(null);
   const mosaicProgramRef = useRef<WebGLProgram | null>(null);
+  const sparkleProgramRef = useRef<WebGLProgram | null>(null);
 
   // Video texture
   const videoTexRef = useRef<WebGLTexture | null>(null);
   const lastNearestRef = useRef<boolean>(false);
+
+  // Sparkle texture
+  const starTexRef = useRef<WebGLTexture | null>(null);
+  const starImageRef = useRef<HTMLImageElement | null>(null);
 
   // RAF & timers
   const rafRef = useRef<number>(0);
@@ -231,13 +212,8 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   const mosaicEffectStartRef = useRef<number>(-1);
   const mosaicAngleRef = useRef<number>(0);
 
-  // Typography overlay: offscreen canvas + texture + movers
-  const typoCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const typoCtxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const typoTexRef = useRef<WebGLTexture | null>(null);
-  const moversRef = useRef<Mover[] | null>(null);
-  const letters = ["A", "S", "P"];
-  const typoInitedRef = useRef<boolean>(false);
+  // Typography overlay
+  const typoResourcesRef = useRef<TypographyResources | null>(null);
 
   // Effect def
   const effectDef = useMemo<EffectDefinition>(() => {
@@ -257,110 +233,8 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     badTVProgramRef.current = result.programs.badTVProgram;
     psychedelicProgramRef.current = result.programs.psychedelicProgram;
     mosaicProgramRef.current = result.programs.mosaicProgram;
+    sparkleProgramRef.current = result.programs.sparkleProgram;
     return true;
-  };
-
-  // Typography init (called when entering typography effect or on resize)
-  const ensureTypographyResources = () => {
-    const canvas = canvasRef.current!;
-    const {w: cssW, h: cssH} = getCssSize(canvas);
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-    // Offscreen canvas
-    if (!typoCanvasRef.current) {
-      typoCanvasRef.current = document.createElement("canvas");
-    }
-    const tcv = typoCanvasRef.current!;
-    tcv.width = Math.max(1, Math.floor(cssW * dpr));
-    tcv.height = Math.max(1, Math.floor(cssH * dpr));
-    const ctx = (typoCtxRef.current = tcv.getContext("2d", {
-      alpha: true,
-    }) as CanvasRenderingContext2D);
-    if (!ctx) return;
-
-    // 1 CSS px = dpr 画素に
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    // Movers 初期化（画面中央付近）
-    if (!moversRef.current || !typoInitedRef.current) {
-      const cx = cssW * 0.5;
-      const cy = cssH * 0.5;
-      const spread = Math.min(cssW, cssH) * 0.18;
-      moversRef.current = [
-        new Mover(cx - spread, cy, 72),
-        new Mover(cx, cy - spread * 0.2, 72),
-        new Mover(cx + spread, cy, 72),
-      ];
-      typoInitedRef.current = true;
-    }
-
-    // WebGL テクスチャ
-    const gl = glRef.current!;
-    if (!typoTexRef.current) {
-      typoTexRef.current = gl.createTexture()!;
-      gl.bindTexture(gl.TEXTURE_2D, typoTexRef.current);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tcv);
-    }
-  };
-
-  const drawTypographyToCanvas = () => {
-    const ctx = typoCtxRef.current!;
-    const canvas = canvasRef.current!;
-    const {w: cssW, h: cssH} = getCssSize(canvas);
-    if (!moversRef.current) return;
-
-    // クリア（透明）
-    ctx.clearRect(0, 0, cssW, cssH);
-
-    // アップデート
-    for (const m of moversRef.current) m.update();
-
-    // ❷ 線（A→S→P）
-    ctx.strokeStyle = "rgba(255,255,255,1)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(moversRef.current[0].pos.x, moversRef.current[0].pos.y);
-    ctx.lineTo(moversRef.current[1].pos.x, moversRef.current[1].pos.y);
-    ctx.lineTo(moversRef.current[2].pos.x, moversRef.current[2].pos.y);
-    ctx.stroke();
-
-    // ❸ 文字
-    ctx.fillStyle = "rgba(255,255,255,1)";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    for (let i = 0; i < moversRef.current.length; i++) {
-      const m = moversRef.current[i];
-      ctx.font = `${Math.max(
-        8,
-        m.size
-      )}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-      ctx.fillText(letters[i], m.pos.x, m.pos.y);
-    }
-  };
-
-  const uploadTypographyTexture = () => {
-    const gl = glRef.current!;
-    const tcv = typoCanvasRef.current!;
-    const tex = typoTexRef.current!;
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); // 2Dはそのまま
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tcv);
-  };
-
-  const randomizeTypographyTargets = () => {
-    const canvas = canvasRef.current!;
-    const {w: cssW, h: cssH} = getCssSize(canvas);
-    if (!moversRef.current) return;
-    for (const m of moversRef.current) {
-      const x = Math.random() * cssW * 0.6 + cssW * 0.2;
-      const y = Math.random() * cssH * 0.6 + cssH * 0.2;
-      const size = 48 + Math.random() * 48;
-      m.setTarget(x, y, size);
-    }
   };
 
   /* --------------------------- Effects lifecycle --------------------------- */
@@ -378,21 +252,63 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     const onResize = () => {
       if (!glRef.current || !canvasRef.current) return;
       sizeCanvasToDisplay(canvasRef.current, glRef.current);
-      if (effectDef.type === "typography") {
+      if (effectDef.type === "typography" && typoResourcesRef.current) {
         // サイズ変更に追随
-        ensureTypographyResources();
+        typoResourcesRef.current = ensureTypographyResources(
+          glRef.current,
+          canvasRef.current,
+          typoResourcesRef.current
+        );
       }
     };
     window.addEventListener("resize", onResize);
 
     return () => window.removeEventListener("resize", onResize);
-  }, [ready]);
+  }, [ready, effectDef.type]);
 
   // Typography へ切り替えた瞬間に初期化
   useEffect(() => {
-    if (!ready || !glRef.current) return;
+    if (!ready || !glRef.current || !canvasRef.current) return;
     if (effectDef.type === "typography") {
-      ensureTypographyResources();
+      typoResourcesRef.current = ensureTypographyResources(
+        glRef.current,
+        canvasRef.current,
+        typoResourcesRef.current || undefined
+      );
+    }
+  }, [ready, effectDef.type]);
+
+  // Sparkle 星画像のロード
+  useEffect(() => {
+    if (!ready || !glRef.current) return;
+    if (effectDef.type === "sparkle" && !starImageRef.current) {
+      const img = new Image();
+      img.onload = () => {
+        const gl = glRef.current;
+        if (!gl) return;
+
+        // テクスチャを作成
+        const texture = gl.createTexture();
+        if (!texture) return;
+
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          img
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        starTexRef.current = texture;
+        starImageRef.current = img;
+      };
+      img.src = "/assets/large_star.png";
     }
   }, [ready, effectDef.type]);
 
@@ -499,6 +415,51 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             config: cfg,
           });
           programToUse = mosaicProgramRef.current;
+        } else if (
+          effectDef.type === "sparkle" &&
+          sparkleProgramRef.current &&
+          starTexRef.current &&
+          starImageRef.current
+        ) {
+          // 星画像の実際のサイズを取得
+          const starNaturalW =
+            starImageRef.current.naturalWidth || starImageRef.current.width;
+          const starNaturalH =
+            starImageRef.current.naturalHeight || starImageRef.current.height;
+
+          console.log(
+            "Canvas:",
+            canvas.width,
+            "x",
+            canvas.height,
+            "Aspect:",
+            (canvas.width / canvas.height).toFixed(2)
+          );
+          console.log(
+            "Star natural:",
+            starNaturalW,
+            "x",
+            starNaturalH,
+            "Star aspect:",
+            (starNaturalW / starNaturalH).toFixed(2)
+          );
+
+          applySparkleShader({
+            gl,
+            program: sparkleProgramRef.current,
+            time: (t % 10000) * 0.001,
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            starTexture: starTexRef.current,
+            starImageWidth: starNaturalW,
+            starImageHeight: starNaturalH,
+            config: getSparkleConfigForEffect(currentEffectSignal),
+          });
+          programToUse = sparkleProgramRef.current;
+          if (videoTexRef.current && lastNearestRef.current) {
+            setTextureFilter(gl, videoTexRef.current, false);
+            lastNearestRef.current = false;
+          }
         } else {
           // base / typography ではカメラは素描画
           if (videoTexRef.current && lastNearestRef.current) {
@@ -511,10 +472,13 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
         drawQuad(gl, programToUse!, transform2, videoTexRef.current!);
 
         // 2) Typography オーバーレイ（常時：エフェクト=typography の間）
-        if (effectDef.type === "typography") {
-          ensureTypographyResources();
-          drawTypographyToCanvas();
-          uploadTypographyTexture();
+        if (effectDef.type === "typography" && typoResourcesRef.current) {
+          drawTypographyToCanvas(
+            typoResourcesRef.current,
+            canvas,
+            TYPOGRAPHY_LETTERS
+          );
+          uploadTypographyTexture(gl, typoResourcesRef.current);
 
           // アルファ合成でオーバーレイ
           gl.enable(gl.BLEND);
@@ -524,7 +488,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             gl,
             baseProgramRef.current!,
             IDENTITY3 as unknown as number[],
-            typoTexRef.current!
+            typoResourcesRef.current.texture
           );
           gl.disable(gl.BLEND);
         }
@@ -542,9 +506,9 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   /* ------------------------------ Input ------------------------------ */
 
   const handlePointerDown = () => {
-    if (effectDef.type === "typography") {
+    if (effectDef.type === "typography" && typoResourcesRef.current) {
       // 文字のターゲットだけ更新（常時表示）
-      randomizeTypographyTargets();
+      randomizeTypographyTargets(typoResourcesRef.current, canvasRef.current!);
       return;
     }
 
@@ -569,10 +533,14 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
       timersRef.current = [];
       if (glRef.current && videoTexRef.current)
         glRef.current.deleteTexture(videoTexRef.current);
-      if (glRef.current && typoTexRef.current)
-        glRef.current.deleteTexture(typoTexRef.current);
+      if (glRef.current && typoResourcesRef.current?.texture)
+        glRef.current.deleteTexture(typoResourcesRef.current.texture);
+      if (glRef.current && starTexRef.current)
+        glRef.current.deleteTexture(starTexRef.current);
       videoTexRef.current = null;
-      typoTexRef.current = null;
+      typoResourcesRef.current = null;
+      starTexRef.current = null;
+      starImageRef.current = null;
     };
   }, []);
 

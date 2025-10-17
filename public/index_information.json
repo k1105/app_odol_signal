@@ -62,7 +62,8 @@
     "title_index": "darma",
     "title": "darma",
     "effect": {
-      "type": "mosaic"
+      "type": "sparkle",
+      "sparkleIntensity": "subtle"
     }
   },
   {
@@ -71,7 +72,7 @@
     "title_index": "hata",
     "title": "HATA",
     "effect": {
-      "type": "normal"
+      "type": "mosaic"
     }
   },
   {

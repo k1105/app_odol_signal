@@ -7,13 +7,14 @@ export interface SongTitleOverlayProps {
 }
 
 const getSongTitle = (effectSignal: number, playerSignal?: number): string => {
-  // playerSignalが未設定の場合はデフォルトで9を使用
-  const targetPlayerSignal = playerSignal ?? 9;
+  // playerSignalが未設定の場合は何も表示しない
+  if (playerSignal === undefined) {
+    return "";
+  }
 
   const songInfo = indexInformation.find(
     (item) =>
-      item.effectSignal === effectSignal &&
-      item.playerSignal === targetPlayerSignal
+      item.effectSignal === effectSignal && item.playerSignal === playerSignal
   );
   return songInfo ? songInfo.title_index : "";
 };

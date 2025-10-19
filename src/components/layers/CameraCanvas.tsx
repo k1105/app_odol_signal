@@ -407,7 +407,12 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             gl,
             program: psychedelicProgramRef.current,
             time: (t % 10000) * 0.001,
-            config: getPsychedelicConfigForEffect(currentEffectSignal),
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            config: getPsychedelicConfigForEffect(
+              currentEffectSignal,
+              currentPlayerSignal
+            ),
           });
           programToUse = psychedelicProgramRef.current;
           if (videoTexRef.current && lastNearestRef.current) {
@@ -567,7 +572,14 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [ready, videoRef, effectDef, currentEffectSignal, fitMode]);
+  }, [
+    ready,
+    videoRef,
+    effectDef,
+    currentEffectSignal,
+    currentPlayerSignal,
+    fitMode,
+  ]);
 
   /* ------------------------------ Input ------------------------------ */
 

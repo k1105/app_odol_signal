@@ -3,7 +3,7 @@ import {SongTitleOverlay} from "../SongTitleOverlay";
 
 interface BeginPerformanceProps {
   currentEffectSignal: number; // effectSignal: 0-8
-  currentPlayerSignal?: number; // playerSignal: 9-11
+  currentPlayerSignal?: string; // playerSignal: "BLUE" | "YELLOW" | "RED"
 }
 
 export const BeginPerformance = ({

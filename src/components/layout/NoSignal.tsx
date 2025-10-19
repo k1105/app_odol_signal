@@ -1,7 +1,7 @@
 import {FrameLayer} from "../layers/FrameLayer";
 
 interface NoSignalProps {
-  currentPlayerSignal?: number; // playerSignal: 9-11
+  currentPlayerSignal?: string; // playerSignal: "BLUE" | "YELLOW" | "RED"
 }
 
 export const NoSignal = ({currentPlayerSignal}: NoSignalProps) => {

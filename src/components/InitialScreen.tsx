@@ -166,7 +166,6 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
 
       {/* メインコンテンツ */}
       <div className="main-content">
-        {/* ASPロゴ */}
         <div
           className="logo-container"
           style={{

@@ -7,6 +7,8 @@ import {applyBadTVShader} from "../../utils/badTVShader";
 import {applyPsychedelicShader} from "../../utils/psychedelicShader";
 import {applyMosaicShader} from "../../utils/mosaicShader";
 import {applySparkleShader} from "../../utils/sparkleShader";
+import {applyRotatingGridShader} from "../../utils/rotatingGridShader";
+import {getDefaultRotatingGridConfig} from "../../utils/rotatingGridConfig";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {
@@ -16,6 +18,13 @@ import {
   randomizeTypographyTargets,
   type TypographyResources,
 } from "../../utils/typographyConfig";
+import {
+  ensureSnakePathResources,
+  drawSnakePathToCanvas,
+  uploadSnakePathTexture,
+  resetSnakePath,
+  type SnakePathResources,
+} from "../../utils/snakePathConfig";
 import indexInformation from "../../../public/index_information.json";
 
 /* ============================= Types & Config ============================= */
@@ -23,7 +32,7 @@ import indexInformation from "../../../public/index_information.json";
 export interface CameraCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   currentEffectSignal: number; // effectSignal: 0-8
-  currentPlayerSignal?: number; // playerSignal: 9-11
+  currentPlayerSignal?: string; // playerSignal: "BLUE" | "YELLOW" | "RED"
   ready: boolean;
   isNoSignalDetected?: boolean;
   onEffectChange?: (effect: number) => void;
@@ -37,6 +46,8 @@ type EffectKind =
   | "mosaic"
   | "typography"
   | "sparkle"
+  | "rotatingGrid"
+  | "snakePath"
   | "normal";
 interface EffectDefinition {
   type: EffectKind;
@@ -48,7 +59,7 @@ interface EffectDefinition {
 // playerSignalとeffectSignalの組み合わせで検索
 const getEffectDefinition = (
   effectSignal: number,
-  playerSignal?: number
+  playerSignal?: string
 ): EffectDefinition => {
   // playerSignalが未設定の場合は何も表示しない
   if (playerSignal === undefined) {
@@ -195,6 +206,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   const psychedelicProgramRef = useRef<WebGLProgram | null>(null);
   const mosaicProgramRef = useRef<WebGLProgram | null>(null);
   const sparkleProgramRef = useRef<WebGLProgram | null>(null);
+  const rotatingGridProgramRef = useRef<WebGLProgram | null>(null);
 
   // Video texture
   const videoTexRef = useRef<WebGLTexture | null>(null);
@@ -215,6 +227,9 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   // Typography overlay
   const typoResourcesRef = useRef<TypographyResources | null>(null);
 
+  // Snake Path overlay
+  const snakePathResourcesRef = useRef<SnakePathResources | null>(null);
+
   // Effect def
   const effectDef = useMemo<EffectDefinition>(() => {
     return getEffectDefinition(currentEffectSignal, currentPlayerSignal);
@@ -234,6 +249,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     psychedelicProgramRef.current = result.programs.psychedelicProgram;
     mosaicProgramRef.current = result.programs.mosaicProgram;
     sparkleProgramRef.current = result.programs.sparkleProgram;
+    rotatingGridProgramRef.current = result.programs.rotatingGridProgram;
     return true;
   };
 
@@ -260,6 +276,14 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
           typoResourcesRef.current
         );
       }
+      if (effectDef.type === "snakePath" && snakePathResourcesRef.current) {
+        // サイズ変更に追随
+        snakePathResourcesRef.current = ensureSnakePathResources(
+          glRef.current,
+          canvasRef.current,
+          snakePathResourcesRef.current
+        );
+      }
     };
     window.addEventListener("resize", onResize);
 
@@ -274,6 +298,13 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
         glRef.current,
         canvasRef.current,
         typoResourcesRef.current || undefined
+      );
+    }
+    if (effectDef.type === "snakePath") {
+      snakePathResourcesRef.current = ensureSnakePathResources(
+        glRef.current,
+        canvasRef.current,
+        snakePathResourcesRef.current || undefined
       );
     }
   }, [ready, effectDef.type]);
@@ -460,8 +491,25 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             setTextureFilter(gl, videoTexRef.current, false);
             lastNearestRef.current = false;
           }
+        } else if (
+          effectDef.type === "rotatingGrid" &&
+          rotatingGridProgramRef.current
+        ) {
+          applyRotatingGridShader({
+            gl,
+            program: rotatingGridProgramRef.current,
+            time: (t % 10000) * 0.001,
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            config: getDefaultRotatingGridConfig(),
+          });
+          programToUse = rotatingGridProgramRef.current;
+          if (videoTexRef.current && lastNearestRef.current) {
+            setTextureFilter(gl, videoTexRef.current, false);
+            lastNearestRef.current = false;
+          }
         } else {
-          // base / typography ではカメラは素描画
+          // base / typography / snakePath ではカメラは素描画
           if (videoTexRef.current && lastNearestRef.current) {
             setTextureFilter(gl, videoTexRef.current, false);
             lastNearestRef.current = false;
@@ -493,6 +541,24 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
           gl.disable(gl.BLEND);
         }
 
+        // 3) Snake Path オーバーレイ（スクリーンブレンド）
+        if (effectDef.type === "snakePath" && snakePathResourcesRef.current) {
+          drawSnakePathToCanvas(snakePathResourcesRef.current, canvas);
+          uploadSnakePathTexture(gl, snakePathResourcesRef.current);
+
+          // スクリーンブレンドで合成
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR);
+          // 画面全体に表示
+          drawQuad(
+            gl,
+            baseProgramRef.current!,
+            IDENTITY3 as unknown as number[],
+            snakePathResourcesRef.current.texture
+          );
+          gl.disable(gl.BLEND);
+        }
+
         rafRef.current = requestAnimationFrame(draw);
       } catch {
         rafRef.current = requestAnimationFrame(draw);
@@ -509,6 +575,12 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     if (effectDef.type === "typography" && typoResourcesRef.current) {
       // 文字のターゲットだけ更新（常時表示）
       randomizeTypographyTargets(typoResourcesRef.current, canvasRef.current!);
+      return;
+    }
+
+    if (effectDef.type === "snakePath" && snakePathResourcesRef.current) {
+      // Snake Pathをリセット
+      resetSnakePath(snakePathResourcesRef.current);
       return;
     }
 
@@ -535,10 +607,13 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
         glRef.current.deleteTexture(videoTexRef.current);
       if (glRef.current && typoResourcesRef.current?.texture)
         glRef.current.deleteTexture(typoResourcesRef.current.texture);
+      if (glRef.current && snakePathResourcesRef.current?.texture)
+        glRef.current.deleteTexture(snakePathResourcesRef.current.texture);
       if (glRef.current && starTexRef.current)
         glRef.current.deleteTexture(starTexRef.current);
       videoTexRef.current = null;
       typoResourcesRef.current = null;
+      snakePathResourcesRef.current = null;
       starTexRef.current = null;
       starImageRef.current = null;
     };

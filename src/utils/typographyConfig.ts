@@ -1,8 +1,7 @@
-/* ============================= Typography (ASP) Config ============================= */
+/* ============================= Typography Config ============================= */
 
 /**
  * Typography overlay用の Mover クラス
- * 文字（A, S, P）がスプリングアニメーションで移動する
  */
 export class Mover {
   pos = {x: 0, y: 0};

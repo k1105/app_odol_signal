@@ -24,8 +24,8 @@ function FullCameraApp() {
 
   const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）
   const [currentPlayerSignal, setCurrentPlayerSignal] = useState<
-    number | undefined
-  >(undefined); // playerSignal: 9-11（オーバーレイ切り替え）
+    string | undefined
+  >(undefined); // playerSignal: "BLUE" | "YELLOW" | "RED"（オーバーレイ切り替え）
   const [ready, setReady] = useState(false);
   const [isNoSignalDetected, setIsNoSignalDetected] = useState(true); // 初期状態では信号なし
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
@@ -86,8 +86,14 @@ function FullCameraApp() {
     if (layout === "Countdown") return; // カウントダウン中は何もしない
 
     // 信号9-11はplayerSignal（オーバーレイ切り替え）
+    // 数値を文字列にマッピング: 9="BLUE", 10="YELLOW", 11="RED"
     if (effectId >= 9 && effectId <= 11) {
-      setCurrentPlayerSignal(effectId);
+      const playerSignalMap: {[key: number]: string} = {
+        9: "BLUE",
+        10: "YELLOW",
+        11: "RED",
+      };
+      setCurrentPlayerSignal(playerSignalMap[effectId]);
       return;
     }
 

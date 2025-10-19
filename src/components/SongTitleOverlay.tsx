@@ -3,10 +3,10 @@ import indexInformation from "../../public/index_information.json";
 
 export interface SongTitleOverlayProps {
   effectSignal: number; // effectSignal: 0-8
-  playerSignal?: number; // playerSignal: 9-11
+  playerSignal?: string; // playerSignal: "BLUE" | "YELLOW" | "RED"
 }
 
-const getSongTitle = (effectSignal: number, playerSignal?: number): string => {
+const getSongTitle = (effectSignal: number, playerSignal?: string): string => {
   // playerSignalが未設定の場合は何も表示しない
   if (playerSignal === undefined) {
     return "";

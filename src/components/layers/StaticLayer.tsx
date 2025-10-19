@@ -27,7 +27,7 @@ staticImgMap.set(18, "");
 
 interface StaticLayerProps {
   effectSignal: number; // effectSignal: 0-8
-  playerSignal?: number; // playerSignal: 9-11
+  playerSignal?: string; // playerSignal: "BLUE" | "YELLOW" | "RED"
 }
 
 export const StaticLayer = ({effectSignal}: StaticLayerProps) => {

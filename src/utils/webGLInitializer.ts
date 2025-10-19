@@ -13,6 +13,10 @@ import {
 } from "./psychedelicShader";
 import {mosaicVertexShader, mosaicFragmentShader} from "./mosaicShader";
 import {sparkleVertexShader, sparkleFragmentShader} from "./sparkleShader";
+import {
+  rotatingGridVertexShader,
+  rotatingGridFragmentShader,
+} from "./rotatingGridShader";
 
 export interface WebGLPrograms {
   program: WebGLProgram | null;
@@ -22,6 +26,7 @@ export interface WebGLPrograms {
   staticProgram: WebGLProgram | null;
   mosaicProgram: WebGLProgram | null;
   sparkleProgram: WebGLProgram | null;
+  rotatingGridProgram: WebGLProgram | null;
 }
 
 // WebGL初期化
@@ -44,6 +49,7 @@ export const initWebGL = (
           staticProgram: null,
           mosaicProgram: null,
           sparkleProgram: null,
+          rotatingGridProgram: null,
         },
       };
     }
@@ -110,6 +116,16 @@ export const initWebGL = (
       gl.FRAGMENT_SHADER,
       sparkleFragmentShader
     );
+    const rotatingGridVertexShaderObj = createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      rotatingGridVertexShader
+    );
+    const rotatingGridFragmentShaderObj = createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      rotatingGridFragmentShader
+    );
 
     if (
       !vertexShader ||
@@ -124,7 +140,9 @@ export const initWebGL = (
       !mosaicVertexShaderObj ||
       !mosaicFragmentShaderObj ||
       !sparkleVertexShaderObj ||
-      !sparkleFragmentShaderObj
+      !sparkleFragmentShaderObj ||
+      !rotatingGridVertexShaderObj ||
+      !rotatingGridFragmentShaderObj
     ) {
       console.error("Shader creation failed");
       return {
@@ -137,6 +155,7 @@ export const initWebGL = (
           staticProgram: null,
           mosaicProgram: null,
           sparkleProgram: null,
+          rotatingGridProgram: null,
         },
       };
     }
@@ -169,6 +188,11 @@ export const initWebGL = (
       sparkleVertexShaderObj,
       sparkleFragmentShaderObj
     );
+    const rotatingGridProgram = createProgram(
+      gl,
+      rotatingGridVertexShaderObj,
+      rotatingGridFragmentShaderObj
+    );
 
     if (
       !program ||
@@ -177,7 +201,8 @@ export const initWebGL = (
       !psychedelicProgram ||
       !staticProgram ||
       !mosaicProgram ||
-      !sparkleProgram
+      !sparkleProgram ||
+      !rotatingGridProgram
     ) {
       console.error("Program creation failed");
       return {
@@ -190,6 +215,7 @@ export const initWebGL = (
           staticProgram: null,
           mosaicProgram: null,
           sparkleProgram: null,
+          rotatingGridProgram: null,
         },
       };
     }
@@ -209,6 +235,7 @@ export const initWebGL = (
         staticProgram,
         mosaicProgram,
         sparkleProgram,
+        rotatingGridProgram,
       },
     };
   } catch (error) {
@@ -223,6 +250,7 @@ export const initWebGL = (
         staticProgram: null,
         mosaicProgram: null,
         sparkleProgram: null,
+        rotatingGridProgram: null,
       },
     };
   }

@@ -1,15 +1,15 @@
 [
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 0,
     "title_index": "toxic_invasion",
     "title": "TOXiC iNVASiON",
     "effect": {
-      "type": "normal"
+      "type": "snakePath"
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 1,
     "title_index": "black_nails",
     "title": "Black Nails",
@@ -18,17 +18,16 @@
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 2,
     "title_index": "no_colors",
     "title": "NO COLOR S",
     "effect": {
-      "type": "badTV",
-      "badTVIntensity": "moderate"
+      "type": "rotatingGrid"
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 3,
     "title_index": "totsugeki",
     "title": "TOTSUGEKI!!!!!",
@@ -38,7 +37,7 @@
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 4,
     "title_index": "make_a_move",
     "title": "MAKE A MOVE",
@@ -48,7 +47,7 @@
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 5,
     "title_index": "I_wont_let_you_go",
     "title": "I won't let you go",
@@ -57,7 +56,7 @@
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 6,
     "title_index": "darma",
     "title": "darma",
@@ -67,7 +66,7 @@
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 7,
     "title_index": "hata",
     "title": "HATA",
@@ -76,7 +75,7 @@
     }
   },
   {
-    "playerSignal": 9,
+    "playerSignal": "BLUE",
     "effectSignal": 8,
     "title_index": "sexual_conversation",
     "title": "SEXUAL CONVERSATiON",
@@ -85,7 +84,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 0,
     "title_index": "toxic_invasion",
     "title": "TOXiC iNVASiON",
@@ -94,7 +93,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 1,
     "title_index": "black_nails",
     "title": "Black Nails",
@@ -103,7 +102,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 2,
     "title_index": "no_colors",
     "title": "NO COLOR S",
@@ -113,7 +112,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 3,
     "title_index": "totsugeki",
     "title": "TOTSUGEKI!!!!!",
@@ -123,7 +122,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 4,
     "title_index": "make_a_move",
     "title": "MAKE A MOVE",
@@ -133,7 +132,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 5,
     "title_index": "I_wont_let_you_go",
     "title": "I won't let you go",
@@ -142,7 +141,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 6,
     "title_index": "darma",
     "title": "darma",
@@ -151,7 +150,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 7,
     "title_index": "hata",
     "title": "HATA",
@@ -160,7 +159,7 @@
     }
   },
   {
-    "playerSignal": 10,
+    "playerSignal": "YELLOW",
     "effectSignal": 8,
     "title_index": "sexual_conversation",
     "title": "SEXUAL CONVERSATiON",
@@ -169,7 +168,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 0,
     "title_index": "toxic_invasion",
     "title": "TOXiC iNVASiON",
@@ -178,7 +177,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 1,
     "title_index": "black_nails",
     "title": "Black Nails",
@@ -187,7 +186,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 2,
     "title_index": "no_colors",
     "title": "NO COLOR S",
@@ -197,7 +196,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 3,
     "title_index": "totsugeki",
     "title": "TOTSUGEKI!!!!!",
@@ -207,7 +206,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 4,
     "title_index": "make_a_move",
     "title": "MAKE A MOVE",
@@ -217,7 +216,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 5,
     "title_index": "I_wont_let_you_go",
     "title": "I won't let you go",
@@ -226,7 +225,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 6,
     "title_index": "darma",
     "title": "darma",
@@ -235,7 +234,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 7,
     "title_index": "hata",
     "title": "HATA",
@@ -244,7 +243,7 @@
     }
   },
   {
-    "playerSignal": 11,
+    "playerSignal": "RED",
     "effectSignal": 8,
     "title_index": "sexual_conversation",
     "title": "SEXUAL CONVERSATiON",

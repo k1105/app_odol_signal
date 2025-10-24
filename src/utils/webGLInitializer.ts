@@ -21,6 +21,7 @@ import {
   noiseGridVertexShader,
   noiseGridFragmentShader,
 } from "./noiseGridShader";
+import {sphereVertexShader, sphereFragmentShader} from "./sphereShader";
 
 export interface WebGLPrograms {
   program: WebGLProgram | null;
@@ -32,6 +33,7 @@ export interface WebGLPrograms {
   sparkleProgram: WebGLProgram | null;
   rotatingGridProgram: WebGLProgram | null;
   noiseGridProgram: WebGLProgram | null;
+  sphereProgram: WebGLProgram | null;
 }
 
 // WebGL初期化
@@ -56,6 +58,7 @@ export const initWebGL = (
           sparkleProgram: null,
           rotatingGridProgram: null,
           noiseGridProgram: null,
+          sphereProgram: null,
         },
       };
     }
@@ -142,6 +145,16 @@ export const initWebGL = (
       gl.FRAGMENT_SHADER,
       noiseGridFragmentShader
     );
+    const sphereVertexShaderObj = createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      sphereVertexShader
+    );
+    const sphereFragmentShaderObj = createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      sphereFragmentShader
+    );
 
     if (
       !vertexShader ||
@@ -160,7 +173,9 @@ export const initWebGL = (
       !rotatingGridVertexShaderObj ||
       !rotatingGridFragmentShaderObj ||
       !noiseGridVertexShaderObj ||
-      !noiseGridFragmentShaderObj
+      !noiseGridFragmentShaderObj ||
+      !sphereVertexShaderObj ||
+      !sphereFragmentShaderObj
     ) {
       console.error("Shader creation failed");
       return {
@@ -175,6 +190,7 @@ export const initWebGL = (
           sparkleProgram: null,
           rotatingGridProgram: null,
           noiseGridProgram: null,
+          sphereProgram: null,
         },
       };
     }
@@ -217,6 +233,11 @@ export const initWebGL = (
       noiseGridVertexShaderObj,
       noiseGridFragmentShaderObj
     );
+    const sphereProgram = createProgram(
+      gl,
+      sphereVertexShaderObj,
+      sphereFragmentShaderObj
+    );
 
     if (
       !program ||
@@ -227,7 +248,8 @@ export const initWebGL = (
       !mosaicProgram ||
       !sparkleProgram ||
       !rotatingGridProgram ||
-      !noiseGridProgram
+      !noiseGridProgram ||
+      !sphereProgram
     ) {
       console.error("Program creation failed");
       return {
@@ -242,6 +264,7 @@ export const initWebGL = (
           sparkleProgram: null,
           rotatingGridProgram: null,
           noiseGridProgram: null,
+          sphereProgram: null,
         },
       };
     }
@@ -263,6 +286,7 @@ export const initWebGL = (
         sparkleProgram,
         rotatingGridProgram,
         noiseGridProgram,
+        sphereProgram,
       },
     };
   } catch (error) {
@@ -279,6 +303,7 @@ export const initWebGL = (
         sparkleProgram: null,
         rotatingGridProgram: null,
         noiseGridProgram: null,
+        sphereProgram: null,
       },
     };
   }

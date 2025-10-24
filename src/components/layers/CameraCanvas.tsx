@@ -12,6 +12,10 @@ import {getDefaultRotatingGridConfig} from "../../utils/rotatingGridConfig";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {
+  renderSphereShader,
+  type SphereRendererContext,
+} from "../../utils/sphereRenderer";
+import {
   ensureTypographyResources,
   drawTypographyToCanvas,
   uploadTypographyTexture,
@@ -215,6 +219,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   const sparkleProgramRef = useRef<WebGLProgram | null>(null);
   const rotatingGridProgramRef = useRef<WebGLProgram | null>(null);
   const noiseGridProgramRef = useRef<WebGLProgram | null>(null);
+  const sphereProgramRef = useRef<WebGLProgram | null>(null);
 
   // Video texture
   const videoTexRef = useRef<WebGLTexture | null>(null);
@@ -262,6 +267,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     sparkleProgramRef.current = result.programs.sparkleProgram;
     rotatingGridProgramRef.current = result.programs.rotatingGridProgram;
     noiseGridProgramRef.current = result.programs.noiseGridProgram;
+    sphereProgramRef.current = result.programs.sphereProgram;
     return true;
   };
 
@@ -606,6 +612,39 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             IDENTITY3 as unknown as number[],
             noiseGridResourcesRef.current.texture
           );
+          gl.disable(gl.BLEND);
+        }
+
+        // 球体シェーダーを常時表示（プレイヤーシグナルに応じてアクティブ球体が変化）
+        if (sphereProgramRef.current && currentPlayerSignal) {
+          // ブレンドモードを有効にして透明部分を透過
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+          const sphereContext: SphereRendererContext = {
+            gl,
+            programs: {
+              program: baseProgramRef.current,
+              blendProgram: null,
+              badTVProgram: badTVProgramRef.current,
+              psychedelicProgram: psychedelicProgramRef.current,
+              staticProgram: null,
+              mosaicProgram: mosaicProgramRef.current,
+              sparkleProgram: sparkleProgramRef.current,
+              rotatingGridProgram: rotatingGridProgramRef.current,
+              noiseGridProgram: noiseGridProgramRef.current,
+              sphereProgram: sphereProgramRef.current,
+            },
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            time: (t % 10000) * 0.001,
+            playerSignal: currentPlayerSignal as "BLUE" | "YELLOW" | "RED",
+          };
+
+          // 球体シェーダーをレンダリング
+          renderSphereShader(sphereContext);
+
+          // ブレンドモードを無効化
           gl.disable(gl.BLEND);
         }
 

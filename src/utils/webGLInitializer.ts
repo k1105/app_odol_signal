@@ -278,6 +278,7 @@ export const initWebGL = (
         mosaicProgram: null,
         sparkleProgram: null,
         rotatingGridProgram: null,
+        noiseGridProgram: null,
       },
     };
   }

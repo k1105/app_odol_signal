@@ -25,6 +25,12 @@ import {
   resetSnakePath,
   type SnakePathResources,
 } from "../../utils/snakePathConfig";
+import {
+  ensureNoiseGridResources,
+  drawNoiseGridToCanvas,
+  uploadNoiseGridTexture,
+  type NoiseGridResources,
+} from "../../utils/noiseGridConfig";
 import indexInformation from "../../../public/index_information.json";
 
 /* ============================= Types & Config ============================= */
@@ -48,6 +54,7 @@ type EffectKind =
   | "sparkle"
   | "rotatingGrid"
   | "snakePath"
+  | "noiseGrid"
   | "normal";
 interface EffectDefinition {
   type: EffectKind;
@@ -207,6 +214,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   const mosaicProgramRef = useRef<WebGLProgram | null>(null);
   const sparkleProgramRef = useRef<WebGLProgram | null>(null);
   const rotatingGridProgramRef = useRef<WebGLProgram | null>(null);
+  const noiseGridProgramRef = useRef<WebGLProgram | null>(null);
 
   // Video texture
   const videoTexRef = useRef<WebGLTexture | null>(null);
@@ -230,6 +238,9 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
   // Snake Path overlay
   const snakePathResourcesRef = useRef<SnakePathResources | null>(null);
 
+  // Noise Grid overlay
+  const noiseGridResourcesRef = useRef<NoiseGridResources | null>(null);
+
   // Effect def
   const effectDef = useMemo<EffectDefinition>(() => {
     return getEffectDefinition(currentEffectSignal, currentPlayerSignal);
@@ -250,6 +261,7 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
     mosaicProgramRef.current = result.programs.mosaicProgram;
     sparkleProgramRef.current = result.programs.sparkleProgram;
     rotatingGridProgramRef.current = result.programs.rotatingGridProgram;
+    noiseGridProgramRef.current = result.programs.noiseGridProgram;
     return true;
   };
 
@@ -284,6 +296,14 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
           snakePathResourcesRef.current
         );
       }
+      if (effectDef.type === "noiseGrid" && noiseGridResourcesRef.current) {
+        // サイズ変更に追随
+        noiseGridResourcesRef.current = ensureNoiseGridResources(
+          glRef.current,
+          canvasRef.current,
+          noiseGridResourcesRef.current
+        );
+      }
     };
     window.addEventListener("resize", onResize);
 
@@ -305,6 +325,13 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
         glRef.current,
         canvasRef.current,
         snakePathResourcesRef.current || undefined
+      );
+    }
+    if (effectDef.type === "noiseGrid") {
+      noiseGridResourcesRef.current = ensureNoiseGridResources(
+        glRef.current,
+        canvasRef.current,
+        noiseGridResourcesRef.current || undefined
       );
     }
   }, [ready, effectDef.type]);
@@ -560,6 +587,24 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             baseProgramRef.current!,
             IDENTITY3 as unknown as number[],
             snakePathResourcesRef.current.texture
+          );
+          gl.disable(gl.BLEND);
+        }
+
+        // 4) Noise Grid オーバーレイ（スクリーンブレンド）
+        if (effectDef.type === "noiseGrid" && noiseGridResourcesRef.current) {
+          drawNoiseGridToCanvas(noiseGridResourcesRef.current, canvas);
+          uploadNoiseGridTexture(gl, noiseGridResourcesRef.current);
+
+          // スクリーンブレンドで合成
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR);
+          // 画面全体に表示
+          drawQuad(
+            gl,
+            baseProgramRef.current!,
+            IDENTITY3 as unknown as number[],
+            noiseGridResourcesRef.current.texture
           );
           gl.disable(gl.BLEND);
         }

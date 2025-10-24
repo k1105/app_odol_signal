@@ -71,7 +71,7 @@
     "title_index": "hata",
     "title": "HATA",
     "effect": {
-      "type": "mosaic"
+      "type": "noiseGrid"
     }
   },
   {

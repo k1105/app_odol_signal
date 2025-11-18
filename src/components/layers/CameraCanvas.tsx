@@ -12,10 +12,6 @@ import {getDefaultRotatingGridConfig} from "../../utils/rotatingGridConfig";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {
-  renderSphereShader,
-  type SphereRendererContext,
-} from "../../utils/sphereRenderer";
-import {
   ensureTypographyResources,
   drawTypographyToCanvas,
   uploadTypographyTexture,
@@ -81,11 +77,11 @@ const getEffectDefinition = (
     (item) =>
       item.effectSignal === effectSignal && item.playerSignal === playerSignal
   );
-  console.log("getEffectDefinition:", {
-    effectSignal,
-    playerSignal,
-    songInfo,
-  });
+  // console.log("getEffectDefinition:", {
+  //   effectSignal,
+  //   playerSignal,
+  //   songInfo,
+  // });
 
   if (!songInfo || !songInfo.effect) {
     return {type: "normal"};
@@ -495,23 +491,6 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             starImageRef.current.naturalWidth || starImageRef.current.width;
           const starNaturalH =
             starImageRef.current.naturalHeight || starImageRef.current.height;
-
-          console.log(
-            "Canvas:",
-            canvas.width,
-            "x",
-            canvas.height,
-            "Aspect:",
-            (canvas.width / canvas.height).toFixed(2)
-          );
-          console.log(
-            "Star natural:",
-            starNaturalW,
-            "x",
-            starNaturalH,
-            "Star aspect:",
-            (starNaturalW / starNaturalH).toFixed(2)
-          );
 
           applySparkleShader({
             gl,

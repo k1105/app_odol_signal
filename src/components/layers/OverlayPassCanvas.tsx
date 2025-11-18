@@ -1,6 +1,4 @@
 import {useEffect, useMemo, useRef} from "react";
-import {getSparkleConfigForEffect} from "../../utils/sparkleConfig";
-import {applySparkleShader} from "../../utils/sparkleShader";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {sizeCanvasToDisplay} from "../../utils/canvasSizing";
@@ -36,12 +34,7 @@ export interface OverlayPassCanvasProps {
   onPointerDown?: () => void;
 }
 
-type OverlayEffectKind =
-  | "sparkle"
-  | "typography"
-  | "snakePath"
-  | "noiseGrid"
-  | "none";
+type OverlayEffectKind = "typography" | "snakePath" | "noiseGrid" | "none";
 
 interface OverlayEffectDefinition {
   type: OverlayEffectKind;
@@ -71,9 +64,8 @@ const getOverlayEffectDefinition = (
   }
 
   const effect = songInfo.effect as JsonEffectDefinition;
-  // オーバーレイエフェクトのみフィルタリング
+  // オーバーレイエフェクトのみフィルタリング（sparkle を除く）
   if (
-    effect.type === "sparkle" ||
     effect.type === "typography" ||
     effect.type === "snakePath" ||
     effect.type === "noiseGrid"
@@ -104,11 +96,6 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
 
   // Programs
   const baseProgramRef = useRef<WebGLProgram | null>(null);
-  const sparkleProgramRef = useRef<WebGLProgram | null>(null);
-
-  // Sparkle texture
-  const starTexRef = useRef<WebGLTexture | null>(null);
-  const starImageRef = useRef<HTMLImageElement | null>(null);
 
   // RAF
   const rafRef = useRef<number>(0);
@@ -137,7 +124,6 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
     }
     glRef.current = result.gl;
     baseProgramRef.current = result.programs.program;
-    sparkleProgramRef.current = result.programs.sparkleProgram;
     return true;
   };
 
@@ -209,39 +195,6 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
     }
   }, [ready, effectDef.type]);
 
-  // Sparkle 星画像のロード
-  useEffect(() => {
-    if (!ready || !glRef.current) return;
-    if (effectDef.type === "sparkle" && !starImageRef.current) {
-      const img = new Image();
-      img.onload = () => {
-        const gl = glRef.current;
-        if (!gl) return;
-
-        const texture = gl.createTexture();
-        if (!texture) return;
-
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(
-          gl.TEXTURE_2D,
-          0,
-          gl.RGBA,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          img
-        );
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        starTexRef.current = texture;
-        starImageRef.current = img;
-      };
-      img.src = "/assets/large_star.png";
-    }
-  }, [ready, effectDef.type]);
-
   /* ------------------------------- Draw loop -------------------------------- */
 
   useEffect(() => {
@@ -250,7 +203,7 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
     const gl = glRef.current!;
     const canvas = canvasRef.current!;
 
-    const draw = (t: number) => {
+    const draw = () => {
       try {
         // DPR/リサイズ
         sizeCanvasToDisplay(canvas, gl);
@@ -258,42 +211,6 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
         // 背景クリア（透明）
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
-
-        // Sparkle エフェクト
-        if (
-          effectDef.type === "sparkle" &&
-          sparkleProgramRef.current &&
-          starTexRef.current &&
-          starImageRef.current
-        ) {
-          const starNaturalW =
-            starImageRef.current.naturalWidth || starImageRef.current.width;
-          const starNaturalH =
-            starImageRef.current.naturalHeight || starImageRef.current.height;
-
-          applySparkleShader({
-            gl,
-            program: sparkleProgramRef.current,
-            time: (t % 10000) * 0.001,
-            canvasWidth: canvas.width,
-            canvasHeight: canvas.height,
-            starTexture: starTexRef.current,
-            starImageWidth: starNaturalW,
-            starImageHeight: starNaturalH,
-            config: getSparkleConfigForEffect(currentEffectSignal),
-          });
-
-          // ブレンド有効化（星同士の重なり）
-          gl.enable(gl.BLEND);
-          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-          drawQuad(
-            gl,
-            sparkleProgramRef.current,
-            IDENTITY3 as unknown as number[],
-            starTexRef.current
-          );
-          gl.disable(gl.BLEND);
-        }
 
         // Typography オーバーレイ
         if (effectDef.type === "typography" && typoResourcesRef.current) {
@@ -384,20 +301,13 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
         glRef.current.deleteTexture(snakePathResourcesRef.current.texture);
       if (glRef.current && noiseGridResourcesRef.current?.texture)
         glRef.current.deleteTexture(noiseGridResourcesRef.current.texture);
-      if (glRef.current && starTexRef.current)
-        glRef.current.deleteTexture(starTexRef.current);
       typoResourcesRef.current = null;
       snakePathResourcesRef.current = null;
       noiseGridResourcesRef.current = null;
-      starTexRef.current = null;
-      starImageRef.current = null;
     };
   }, []);
 
   /* ----------------------------- Render ----------------------------- */
-
-  // sparkle のみ screen ブレンドモードを適用
-  const blendMode = effectDef.type === "sparkle" ? "screen" : "normal";
 
   return (
     <canvas
@@ -406,7 +316,6 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
         width: "100%",
         height: "100%",
         display: "block",
-        mixBlendMode: blendMode,
         ...style,
       }}
       onPointerDown={handlePointerDown}

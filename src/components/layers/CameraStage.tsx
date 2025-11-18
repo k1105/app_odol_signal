@@ -1,12 +1,14 @@
 import React from "react";
 import {CameraPassCanvas} from "./CameraPassCanvas";
+import {TransientEffectsCanvas} from "./TransientEffectsCanvas";
 import {OverlayPassCanvas} from "./OverlayPassCanvas";
 
 /**
- * CameraStage: 2レイヤー構成の統合コンポーネント
+ * CameraStage: 3レイヤー構成の統合コンポーネント
  *
  * - 下レイヤ: CameraPassCanvas (カメラ + 干渉系ポストエフェクト)
- * - 上レイヤ: OverlayPassCanvas (カメラ非依存オーバーレイ)
+ * - 中レイヤ: TransientEffectsCanvas (sparkle エフェクト、screen ブレンド)
+ * - 上レイヤ: OverlayPassCanvas (カメラ非依存オーバーレイ: typography, snakePath, noiseGrid)
  */
 
 export interface CameraStageProps {
@@ -54,7 +56,25 @@ export const CameraStage: React.FC<CameraStageProps> = ({
         />
       </div>
 
-      {/* 上レイヤ: カメラ非依存オーバーレイ */}
+      {/* 中レイヤ: sparkle エフェクト（screen ブレンド） */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+        }}
+      >
+        <TransientEffectsCanvas
+          currentEffectSignal={currentEffectSignal}
+          currentPlayerSignal={currentPlayerSignal}
+          ready={ready}
+        />
+      </div>
+
+      {/* 上レイヤ: カメラ非依存オーバーレイ（typography, snakePath, noiseGrid） */}
       <div
         style={{
           position: "absolute",

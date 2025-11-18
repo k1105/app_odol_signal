@@ -208,10 +208,6 @@ export function drawSnakePathToCanvas(
 
   const s = state.scale;
 
-  // 青い背景を塗る（スクリーンブレンド用）
-  ctx.fillStyle = "rgb(0, 0, 255)";
-  ctx.fillRect(-cssW / 2, -cssH / 2, cssW, cssH);
-
   // テキストを描画
   ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.font =

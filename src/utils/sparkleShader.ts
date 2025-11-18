@@ -17,7 +17,6 @@ export const sparkleVertexShader = `
 export const sparkleFragmentShader = `
   precision mediump float;
 
-  uniform sampler2D u_texture;      // ビデオテクスチャ
   uniform sampler2D u_starTexture;  // 星画像
   uniform float u_time;
   uniform vec2 u_resolution;        // キャンバス解像度
@@ -36,15 +35,9 @@ export const sparkleFragmentShader = `
     return fract(p.x * p.y);
   }
 
-  // スクリーンブレンドモード
-  vec3 screenBlend(vec3 base, vec3 overlay) {
-    return vec3(1.0) - (vec3(1.0) - base) * (vec3(1.0) - overlay);
-  }
-
   void main() {
-    // ベースのビデオ色
-    vec4 baseColor = texture2D(u_texture, v_texCoord);
-    vec3 result = baseColor.rgb;
+    // 背景は完全透明
+    vec4 result = vec4(0.0, 0.0, 0.0, 0.0);
 
     // 複数の星を描画
     for (int i = 0; i < 32; i++) {
@@ -73,7 +66,7 @@ export const sparkleFragmentShader = `
       vec2 starSizeUV;
       starSizeUV.y = (u_starSize.y * sizeScale) / u_resolution.y;
       starSizeUV.x = (u_starSize.x * sizeScale) / u_resolution.x;
-      
+
       // UV空間でのオフセット
       vec2 offset = v_texCoord - starCenter;
 
@@ -81,19 +74,19 @@ export const sparkleFragmentShader = `
       vec2 starUV = offset / starSizeUV + 0.5;
 
       // 星テクスチャの範囲内かチェック
-      if (starUV.x >= 0.0 && starUV.x <= 1.0 && 
+      if (starUV.x >= 0.0 && starUV.x <= 1.0 &&
           starUV.y >= 0.0 && starUV.y <= 1.0) {
         vec4 starColor = texture2D(u_starTexture, starUV);
-        
-        // スクリーンブレンドモードで合成（アルファも考慮）
+
+        // 通常のアルファブレンド（over合成）で星を重ねる
         if (starColor.a > 0.01) {
-          vec3 blended = screenBlend(result, starColor.rgb);
-          result = mix(result, blended, starColor.a);
+          result.rgb = result.rgb * (1.0 - starColor.a) + starColor.rgb * starColor.a;
+          result.a = result.a + starColor.a * (1.0 - result.a);
         }
       }
     }
 
-    gl_FragColor = vec4(result, baseColor.a);
+    gl_FragColor = result;
   }
 `;
 
@@ -140,14 +133,10 @@ export const applySparkleShader = (ctx: SparkleShaderContext): void => {
 
   const u = (name: string) => gl.getUniformLocation(program, name);
 
-  // 星テクスチャをテクスチャユニット1にバインド
-  gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, starTexture);
-  gl.uniform1i(u("u_starTexture"), 1);
-
-  // ビデオテクスチャはテクスチャユニット0（デフォルト）
+  // 星テクスチャをテクスチャユニット0にバインド
   gl.activeTexture(gl.TEXTURE0);
-  gl.uniform1i(u("u_texture"), 0);
+  gl.bindTexture(gl.TEXTURE_2D, starTexture);
+  gl.uniform1i(u("u_starTexture"), 0);
 
   // その他のユニフォーム
   gl.uniform1f(u("u_time"), time);

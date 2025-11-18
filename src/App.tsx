@@ -10,7 +10,7 @@ import {OnPerformance} from "./components/layout/OnPerformance";
 import {BeginPerformance} from "./components/layout/BeginPerformance";
 import {NoSignal} from "./components/layout/NoSignal";
 import {isMobileDevice} from "./utils/deviceDetection";
-import {CameraCanvas} from "./components/layers/CameraCanvas";
+import {CameraStage} from "./components/layers/CameraStage";
 import {Countdown} from "./components/layout/Countdown";
 
 /* ---------- 定数 ---------- */
@@ -379,7 +379,7 @@ function FullCameraApp() {
           <Countdown startTime={startTime} />
         ) : (
           <>
-            <CameraCanvas
+            <CameraStage
               videoRef={videoRef}
               currentEffectSignal={currentEffectSignal}
               currentPlayerSignal={currentPlayerSignal}
@@ -389,10 +389,7 @@ function FullCameraApp() {
             />
 
             {layout === "OnPerformance" && (
-              <OnPerformance
-                currentEffectSignal={currentEffectSignal}
-                currentPlayerSignal={currentPlayerSignal}
-              />
+              <OnPerformance currentPlayerSignal={currentPlayerSignal} />
             )}
 
             {layout === "BeginPerformance" && (

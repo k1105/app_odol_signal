@@ -1,0 +1,254 @@
+[
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 0,
+    "title_index": "toxic_invasion",
+    "title": "TOXiC iNVASiON",
+    "effect": {
+      "type": "snakePath"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 1,
+    "title_index": "black_nails",
+    "title": "Black Nails",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 2,
+    "title_index": "no_colors",
+    "title": "NO COLOR S",
+    "effect": {
+      "type": "rotatingGrid"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 3,
+    "title_index": "totsugeki",
+    "title": "TOTSUGEKI!!!!!",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 4,
+    "title_index": "make_a_move",
+    "title": "MAKE A MOVE",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "intense"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 5,
+    "title_index": "I_wont_let_you_go",
+    "title": "I won't let you go",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 6,
+    "title_index": "darma",
+    "title": "darma",
+    "effect": {
+      "type": "sparkle",
+      "sparkleIntensity": "subtle"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 7,
+    "title_index": "hata",
+    "title": "HATA",
+    "effect": {
+      "type": "noiseGrid"
+    }
+  },
+  {
+    "playerSignal": "BLUE",
+    "effectSignal": 8,
+    "title_index": "sexual_conversation",
+    "title": "SEXUAL CONVERSATiON",
+    "effect": {
+      "type": "typography"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 0,
+    "title_index": "toxic_invasion",
+    "title": "TOXiC iNVASiON",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 1,
+    "title_index": "black_nails",
+    "title": "Black Nails",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 2,
+    "title_index": "no_colors",
+    "title": "NO COLOR S",
+    "effect": {
+      "type": "badTV",
+      "badTVIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 3,
+    "title_index": "totsugeki",
+    "title": "TOTSUGEKI!!!!!",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 4,
+    "title_index": "make_a_move",
+    "title": "MAKE A MOVE",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "intense"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 5,
+    "title_index": "I_wont_let_you_go",
+    "title": "I won't let you go",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 6,
+    "title_index": "darma",
+    "title": "darma",
+    "effect": {
+      "type": "mosaic"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 7,
+    "title_index": "hata",
+    "title": "HATA",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "YELLOW",
+    "effectSignal": 8,
+    "title_index": "sexual_conversation",
+    "title": "SEXUAL CONVERSATiON",
+    "effect": {
+      "type": "typography"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 0,
+    "title_index": "toxic_invasion",
+    "title": "TOXiC iNVASiON",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 1,
+    "title_index": "black_nails",
+    "title": "Black Nails",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 2,
+    "title_index": "no_colors",
+    "title": "NO COLOR S",
+    "effect": {
+      "type": "badTV",
+      "badTVIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 3,
+    "title_index": "totsugeki",
+    "title": "TOTSUGEKI!!!!!",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "moderate"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 4,
+    "title_index": "make_a_move",
+    "title": "MAKE A MOVE",
+    "effect": {
+      "type": "psychedelic",
+      "psychedelicIntensity": "intense"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 5,
+    "title_index": "I_wont_let_you_go",
+    "title": "I won't let you go",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 6,
+    "title_index": "darma",
+    "title": "darma",
+    "effect": {
+      "type": "mosaic"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 7,
+    "title_index": "hata",
+    "title": "HATA",
+    "effect": {
+      "type": "normal"
+    }
+  },
+  {
+    "playerSignal": "RED",
+    "effectSignal": 8,
+    "title_index": "sexual_conversation",
+    "title": "SEXUAL CONVERSATiON",
+    "effect": {
+      "type": "typography"
+    }
+  }
+]

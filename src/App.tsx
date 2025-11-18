@@ -36,7 +36,7 @@ function FullCameraApp() {
   const [overlayEffectSignal, setOverlayEffectSignal] = useState(-1); // 信号0-2用
   const [cameraEffectSignal, setCameraEffectSignal] = useState(-1); // 信号3-5用
   const [transientEffectSignal, setTransientEffectSignal] = useState(-1); // 信号6-8用
-  const transientEffectsTimerRef = useRef<number | null>(null);
+  const lastTransientSignalTimeRef = useRef<number | null>(null);
 
   // エフェクト制御
   const isBeginingSongRef = useRef(false);
@@ -91,6 +91,16 @@ function FullCameraApp() {
     if (isBeginingSongRef.current) return;
     if (layout === "Countdown") return; // カウントダウン中は何もしない
 
+    // 信号受信のたびに、前回のtransient信号から500ms以上経過しているかチェック
+    const now = Date.now();
+    if (lastTransientSignalTimeRef.current !== null) {
+      if (now - lastTransientSignalTimeRef.current > 1000) {
+        // 500ms以上経過していたら、transientエフェクトを停止
+        setTransientEffectSignal(-1);
+        lastTransientSignalTimeRef.current = null;
+      }
+    }
+
     // 信号9-11はplayerSignal（オーバーレイ切り替え）
     // 数値を文字列にマッピング: 9="BLUE", 10="YELLOW", 11="RED"
     if (effectId >= 9 && effectId <= 11) {
@@ -135,20 +145,11 @@ function FullCameraApp() {
     }
     // 信号6-8: TransientEffectsCanvas用エフェクト
     else if (effectId >= 6 && effectId <= 8) {
-      // 既存のタイマーを必ずクリア（新しい信号でカウントをリセット）
-      if (transientEffectsTimerRef.current !== null) {
-        window.clearTimeout(transientEffectsTimerRef.current);
-        transientEffectsTimerRef.current = null;
-      }
-
       // エフェクトIDを設定
       setTransientEffectSignal(effectId);
 
-      // 5秒後に自動的にニュートラル状態に戻す
-      transientEffectsTimerRef.current = window.setTimeout(() => {
-        setTransientEffectSignal(-1);
-        transientEffectsTimerRef.current = null;
-      }, 5000);
+      // 最後に信号を受信した時刻を記録
+      lastTransientSignalTimeRef.current = now;
     }
 
     if (isHalfTimeEllapsed) {
@@ -311,10 +312,6 @@ function FullCameraApp() {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
-      }
-      // TransientEffectsCanvasのタイマーをクリア
-      if (transientEffectsTimerRef.current !== null) {
-        window.clearTimeout(transientEffectsTimerRef.current);
       }
     };
   }, []);

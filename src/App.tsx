@@ -22,7 +22,7 @@ function FullCameraApp() {
   const initedRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）
+  const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）- 互換性のために保持
   const [currentPlayerSignal, setCurrentPlayerSignal] = useState<
     string | undefined
   >(undefined); // playerSignal: "BLUE" | "YELLOW" | "RED"（オーバーレイ切り替え）
@@ -31,6 +31,12 @@ function FullCameraApp() {
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [layout, setLayout] = useState<LayoutMode>("NoSignal");
+
+  // 各レイヤー用の独立したエフェクト信号
+  const [overlayEffectSignal, setOverlayEffectSignal] = useState(-1); // 信号0-2用
+  const [cameraEffectSignal, setCameraEffectSignal] = useState(-1); // 信号3-5用
+  const [transientEffectSignal, setTransientEffectSignal] = useState(-1); // 信号6-8用
+  const transientEffectsTimerRef = useRef<number | null>(null);
 
   // エフェクト制御
   const isBeginingSongRef = useRef(false);
@@ -105,6 +111,46 @@ function FullCameraApp() {
       onFinnishSignal();
       return;
     }
+
+    // 信号0-8を3つのグループに区分して各レイヤーのエフェクトを制御
+    // 信号0-2: OverlayPassCanvas用エフェクト
+    if (effectId >= 0 && effectId <= 2) {
+      if (effectId === 2) {
+        // 信号2はニュートラル状態に戻す
+        setOverlayEffectSignal(-1);
+      } else {
+        // 信号0, 1はそのままエフェクトIDを設定
+        setOverlayEffectSignal(effectId);
+      }
+    }
+    // 信号3-5: CameraPassCanvas用エフェクト
+    else if (effectId >= 3 && effectId <= 5) {
+      if (effectId === 5) {
+        // 信号5はニュートラル状態に戻す
+        setCameraEffectSignal(-1);
+      } else {
+        // 信号3, 4はそのままエフェクトIDを設定
+        setCameraEffectSignal(effectId);
+      }
+    }
+    // 信号6-8: TransientEffectsCanvas用エフェクト
+    else if (effectId >= 6 && effectId <= 8) {
+      // 既存のタイマーを必ずクリア（新しい信号でカウントをリセット）
+      if (transientEffectsTimerRef.current !== null) {
+        window.clearTimeout(transientEffectsTimerRef.current);
+        transientEffectsTimerRef.current = null;
+      }
+
+      // エフェクトIDを設定
+      setTransientEffectSignal(effectId);
+
+      // 5秒後に自動的にニュートラル状態に戻す
+      transientEffectsTimerRef.current = window.setTimeout(() => {
+        setTransientEffectSignal(-1);
+        transientEffectsTimerRef.current = null;
+      }, 5000);
+    }
+
     if (isHalfTimeEllapsed) {
       beginFlagRef.current =
         currentEffectSignal !== effectId + 10 ? false : true;
@@ -266,6 +312,10 @@ function FullCameraApp() {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
+      // TransientEffectsCanvasのタイマーをクリア
+      if (transientEffectsTimerRef.current !== null) {
+        window.clearTimeout(transientEffectsTimerRef.current);
+      }
     };
   }, []);
 
@@ -381,11 +431,13 @@ function FullCameraApp() {
           <>
             <CameraStage
               videoRef={videoRef}
-              currentEffectSignal={currentEffectSignal}
               currentPlayerSignal={currentPlayerSignal}
               ready={ready}
               isNoSignalDetected={isNoSignalDetected}
               onEffectChange={handleEffectChange}
+              overlayEffectSignal={overlayEffectSignal}
+              cameraEffectSignal={cameraEffectSignal}
+              transientEffectSignal={transientEffectSignal}
             />
 
             {layout === "OnPerformance" && (

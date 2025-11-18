@@ -13,20 +13,24 @@ import {OverlayPassCanvas} from "./OverlayPassCanvas";
 
 export interface CameraStageProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  currentEffectSignal: number;
   currentPlayerSignal?: string;
   ready: boolean;
   fitMode?: "contain" | "cover";
   isNoSignalDetected?: boolean;
   onEffectChange?: (effect: number) => void;
+  overlayEffectSignal: number;
+  cameraEffectSignal: number;
+  transientEffectSignal: number;
 }
 
 export const CameraStage: React.FC<CameraStageProps> = ({
   videoRef,
-  currentEffectSignal,
   currentPlayerSignal,
   ready,
   fitMode = "contain",
+  overlayEffectSignal,
+  cameraEffectSignal,
+  transientEffectSignal,
 }) => {
   return (
     <div
@@ -49,7 +53,7 @@ export const CameraStage: React.FC<CameraStageProps> = ({
       >
         <CameraPassCanvas
           videoRef={videoRef}
-          currentEffectSignal={currentEffectSignal}
+          currentEffectSignal={cameraEffectSignal}
           currentPlayerSignal={currentPlayerSignal}
           ready={ready}
           fitMode={fitMode}
@@ -68,7 +72,7 @@ export const CameraStage: React.FC<CameraStageProps> = ({
         }}
       >
         <TransientEffectsCanvas
-          currentEffectSignal={currentEffectSignal}
+          currentEffectSignal={transientEffectSignal}
           currentPlayerSignal={currentPlayerSignal}
           ready={ready}
         />
@@ -86,7 +90,7 @@ export const CameraStage: React.FC<CameraStageProps> = ({
         }}
       >
         <OverlayPassCanvas
-          currentEffectSignal={currentEffectSignal}
+          currentEffectSignal={overlayEffectSignal}
           currentPlayerSignal={currentPlayerSignal}
           ready={ready}
         />

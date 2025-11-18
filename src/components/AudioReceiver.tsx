@@ -17,6 +17,7 @@ interface AudioReceiverProps {
   availableEffects: number; // 利用可能なエフェクトの数を追加
   onNoSignalDetected?: () => void; // 信号が検出されていない状態を通知
   permissionsGranted?: boolean; // 権限が許可されているかどうか
+  audioStream?: MediaStream | null; // 外部から渡されたマイクストリーム
 }
 
 // WebKitAudioContextの型定義
@@ -31,6 +32,7 @@ export function AudioReceiver({
   availableEffects,
   onNoSignalDetected,
   permissionsGranted = false,
+  audioStream = null,
 }: AudioReceiverProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -45,16 +47,25 @@ export function AudioReceiver({
   // マイクアクセス要求
   const requestMicrophoneAccess = async () => {
     try {
-      console.log("AudioReceiver: マイクアクセス要求中...");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: CONFIG.SAMPLE_RATE,
-          channelCount: 1,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      });
+      let stream: MediaStream;
+
+      // 外部から渡されたストリームがある場合はそれを使用
+      if (audioStream) {
+        console.log("AudioReceiver: 外部から渡されたマイクストリームを使用");
+        stream = audioStream;
+      } else {
+        // ストリームが渡されていない場合は新たに要求
+        console.log("AudioReceiver: マイクアクセス要求中...");
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: CONFIG.SAMPLE_RATE,
+            channelCount: 1,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
+      }
 
       console.log("AudioReceiver: マイクアクセス成功");
 
@@ -281,7 +292,7 @@ export function AudioReceiver({
         audioContextRef.current.close();
       }
     };
-  }, [permissionsGranted]);
+  }, [permissionsGranted, audioStream]);
 
   return null; // UIを表示しない
 }

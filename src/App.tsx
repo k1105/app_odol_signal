@@ -21,6 +21,7 @@ function FullCameraApp() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const initedRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
 
   const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）- 互換性のために保持
   const [currentPlayerSignal, setCurrentPlayerSignal] = useState<
@@ -221,7 +222,10 @@ function FullCameraApp() {
       console.log("使用する制約:", constraints);
 
       // カメラとマイクの許可を要求
-      await navigator.mediaDevices.getUserMedia(constraints);
+      const permissionStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // マイクストリームを保存（AudioReceiverで使用）
+      audioStreamRef.current = permissionStream;
 
       console.log("権限が許可されました");
       setPermissionsGranted(true);
@@ -247,7 +251,11 @@ function FullCameraApp() {
             audio: true,
           };
 
-          await navigator.mediaDevices.getUserMedia(basicConstraints);
+          const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+
+          // マイクストリームを保存（AudioReceiverで使用）
+          audioStreamRef.current = basicStream;
+
           console.log("基本制約での権限取得に成功");
           setPermissionsGranted(true);
           setShowPermissionPrompt(false);
@@ -312,6 +320,9 @@ function FullCameraApp() {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
   }, []);
@@ -418,6 +429,7 @@ function FullCameraApp() {
           availableEffects={NUM_EFFECTS}
           onNoSignalDetected={handleNoSignalDetected}
           permissionsGranted={permissionsGranted}
+          audioStream={audioStreamRef.current}
         />
 
         {/* 初期画面 - 信号同期モードで信号が検出されていない時のみ表示 */}

@@ -1,11 +1,13 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import {AudioReceiver} from "./components/AudioReceiver";
 import {InitialScreen} from "./components/InitialScreen";
-import {
-  NewHamburgerMenu,
-  type SignalLogEntry,
-} from "./components/NewHamburgerMenu";
-import type {LayoutMode} from "./components/NewHamburgerMenu";
+// ハンバーガーメニュー関連をコメントアウト
+// import {
+//   NewHamburgerMenu,
+//   type SignalLogEntry,
+// } from "./components/NewHamburgerMenu";
+// import type {LayoutMode} from "./components/NewHamburgerMenu";
+type LayoutMode = "NoSignal" | "BeginPerformance" | "OnPerformance" | "Countdown";
 import {OnPerformance} from "./components/layout/OnPerformance";
 import {BeginPerformance} from "./components/layout/BeginPerformance";
 import {NoSignal} from "./components/layout/NoSignal";
@@ -24,7 +26,8 @@ function FullCameraApp() {
   const streamRef = useRef<MediaStream | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
 
-  const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）- 互換性のために保持
+  // ハンバーガーメニュー用ステート - コメントアウト
+  // const [currentEffectSignal, setCurrentEffectSignal] = useState(-1); // effectSignal: 0-8（エフェクト切り替え）- 互換性のために保持
   const [currentPlayerSignal, setCurrentPlayerSignal] = useState<
     string | undefined
   >(undefined); // playerSignal: "BLUE" | "YELLOW" | "RED"（オーバーレイ切り替え）
@@ -49,22 +52,24 @@ function FullCameraApp() {
   // エフェクト制御
   const isBeginingSongRef = useRef(false);
   const beginFlagRef = useRef(false);
+  const lastEffectIdRef = useRef<number>(-1); // 前回のエフェクトIDを追跡
 
-  const [countdownDate, setCountdownDate] = useState("2025-08-10");
-  const [countdownTime, setCountdownTime] = useState("00:00");
-  const [halfTime, setHalfTime] = useState(15);
-  const [startTime, setStartTime] = useState(
-    new Date(`${countdownDate}T${countdownTime}:00`).getTime()
-  );
-  const [ellapsedTime, setEllapsedTime] = useState(0);
-  const isHalfTimeEllapsed = ellapsedTime > 60;
+  // ハンバーガーメニュー用ステート - コメントアウト
+  // const [countdownDate, setCountdownDate] = useState("2025-08-10");
+  // const [countdownTime, setCountdownTime] = useState("00:00");
+  // const [halfTime, setHalfTime] = useState(15);
+  // const [startTime, setStartTime] = useState(
+  //   new Date(`${countdownDate}T${countdownTime}:00`).getTime()
+  // );
+  // const [ellapsedTime, setEllapsedTime] = useState(0);
+  // const isHalfTimeEllapsed = ellapsedTime > 60;
+  const [startTime] = useState(new Date("2025-08-10T00:00:00").getTime());
 
-  setInterval(() => {
-    setEllapsedTime(Math.floor((Date.now() - startTime) / 1000 / 60));
-  }, 5000);
+  // setInterval(() => {
+  //   setEllapsedTime(Math.floor((Date.now() - startTime) / 1000 / 60));
+  // }, 5000);
 
-  // 新しいハンバーガーメニュー用のstate
-  const [signalLog, setSignalLog] = useState<SignalLogEntry[]>([]);
+  // const [signalLog, setSignalLog] = useState<SignalLogEntry[]>([]);
 
   const onBeginSignal = () => {
     if (!beginFlagRef.current && layout !== "Countdown") {
@@ -90,7 +95,8 @@ function FullCameraApp() {
   const onNoSignal = useCallback(() => {
     if (layout !== "Countdown") {
       setLayout("NoSignal");
-      setCurrentEffectSignal(-1);
+      // ハンバーガーメニュー用 - コメントアウト
+      // setCurrentEffectSignal(-1);
     }
   }, [layout]);
 
@@ -160,15 +166,21 @@ function FullCameraApp() {
       lastTransientSignalTimeRef.current = now;
     }
 
-    if (isHalfTimeEllapsed) {
-      beginFlagRef.current =
-        currentEffectSignal !== effectId + 10 ? false : true;
-      setCurrentEffectSignal(effectId + 10);
-      setLayout("OnPerformance");
-      return;
-    }
-    beginFlagRef.current = currentEffectSignal !== effectId ? false : true;
-    setCurrentEffectSignal(effectId);
+    // ハンバーガーメニュー用 - コメントアウト
+    // if (isHalfTimeEllapsed) {
+    //   beginFlagRef.current =
+    //     currentEffectSignal !== effectId + 10 ? false : true;
+    //   setCurrentEffectSignal(effectId + 10);
+    //   setLayout("OnPerformance");
+    //   return;
+    // }
+    // beginFlagRef.current = currentEffectSignal !== effectId ? false : true;
+    // setCurrentEffectSignal(effectId);
+
+    // 前回と異なるエフェクトIDが来た時、beginFlagをリセット
+    beginFlagRef.current = lastEffectIdRef.current !== effectId ? false : true;
+    lastEffectIdRef.current = effectId;
+
     setLayout("OnPerformance");
   };
 
@@ -177,31 +189,32 @@ function FullCameraApp() {
     setIsNoSignalDetected(true);
   };
 
-  const handleEffectChange = (effect: number) => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    setCurrentEffectSignal(effect);
-  };
+  // ハンバーガーメニュー関連関数 - コメントアウト
+  // const handleEffectChange = (effect: number) => {
+  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
+  //   setCurrentEffectSignal(effect);
+  // };
 
-  // 新しいハンバーガーメニュー用の関数
-  const handleBeginSignal = () => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    const timestamp = new Date().toLocaleTimeString();
-    setSignalLog((prev) => [...prev, {timestamp, signal: "BEGIN"}]);
-    onBeginSignal();
-  };
+  // // 新しいハンバーガーメニュー用の関数
+  // const handleBeginSignal = () => {
+  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
+  //   const timestamp = new Date().toLocaleTimeString();
+  //   setSignalLog((prev) => [...prev, {timestamp, signal: "BEGIN"}]);
+  //   onBeginSignal();
+  // };
 
-  const handleFinishSignal = () => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    const timestamp = new Date().toLocaleTimeString();
-    setSignalLog((prev) => [...prev, {timestamp, signal: "FINISH"}]);
-    onFinnishSignal();
-  };
+  // const handleFinishSignal = () => {
+  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
+  //   const timestamp = new Date().toLocaleTimeString();
+  //   setSignalLog((prev) => [...prev, {timestamp, signal: "FINISH"}]);
+  //   onFinnishSignal();
+  // };
 
-  const handleSimulatorIndexChange = (index: number) => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    beginFlagRef.current = currentEffectSignal !== index ? false : true;
-    setCurrentEffectSignal(index);
-  };
+  // const handleSimulatorIndexChange = (index: number) => {
+  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
+  //   beginFlagRef.current = currentEffectSignal !== index ? false : true;
+  //   setCurrentEffectSignal(index);
+  // };
 
   // 権限要求関数
   const requestPermissions = async () => {
@@ -359,10 +372,11 @@ function FullCameraApp() {
     }
   }, [isNoSignalDetected, onNoSignal]);
 
-  // time
-  useEffect(() => {
-    setStartTime(new Date(`${countdownDate}T${countdownTime}:00`).getTime());
-  }, [countdownDate, countdownTime]);
+  // ハンバーガーメニュー関連useEffect - コメントアウト
+  // // time
+  // useEffect(() => {
+  //   setStartTime(new Date(`${countdownDate}T${countdownTime}:00`).getTime());
+  // }, [countdownDate, countdownTime]);
 
   // カウントダウン完了チェック（1秒ごと）
   useEffect(() => {
@@ -468,7 +482,7 @@ function FullCameraApp() {
               currentPlayerSignal={currentPlayerSignal}
               ready={ready}
               isNoSignalDetected={isNoSignalDetected}
-              onEffectChange={handleEffectChange}
+              // onEffectChange={handleEffectChange} // ハンバーガーメニュー関連 - コメントアウト
               overlayEffectSignal={overlayEffectSignal}
               cameraEffectSignal={cameraEffectSignal}
               transientEffectSignal={transientEffectSignal}
@@ -480,7 +494,7 @@ function FullCameraApp() {
 
             {layout === "BeginPerformance" && (
               <BeginPerformance
-                currentEffectSignal={currentEffectSignal}
+                // currentEffectSignal={currentEffectSignal} // ハンバーガーメニュー関連 - コメントアウト
                 currentPlayerSignal={currentPlayerSignal}
               />
             )}
@@ -503,8 +517,8 @@ function FullCameraApp() {
           />
         )}
 
-        {/* ハンバーガーメニュー */}
-        <NewHamburgerMenu
+        {/* ハンバーガーメニュー - コメントアウト */}
+        {/* <NewHamburgerMenu
           currentState={layout}
           currentIndex={currentEffectSignal}
           signalLog={signalLog}
@@ -518,7 +532,7 @@ function FullCameraApp() {
           onDateChange={setCountdownDate}
           onTimeChange={setCountdownTime}
           onHalfTimeChange={setHalfTime}
-        />
+        /> */}
       </>
     </>
   );

@@ -292,6 +292,8 @@ export function AudioReceiver({
         audioContextRef.current.close();
       }
     };
+    // startReceivingとstopReceivingはrefベースの関数なので、依存配列に含める必要はない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permissionsGranted, audioStream]);
 
   return null; // UIを表示しない

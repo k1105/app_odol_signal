@@ -32,10 +32,9 @@ export async function checkMediaPermissions(
     });
 
     // getUserMedia()を試行
-    const stream =
-      await navigator.mediaDevices.getUserMedia(constraints);
+    await navigator.mediaDevices.getUserMedia(constraints);
 
-    // 成功したらストリームを返す（呼び出し側で使用するため）
+    // 成功したら許可されていると判定
     return {granted: true, error: null};
   } catch (error) {
     // エラーの詳細を解析

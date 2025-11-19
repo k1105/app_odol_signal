@@ -15,7 +15,6 @@ export function detectBrowser(): BrowserInfo {
   const ua = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(ua);
   const isAndroid = /Android/.test(ua);
-  const isMobile = isIOS || isAndroid;
 
   // Arc Browser の検出（CSS変数チェック）
   const isArc = checkIsArc();
@@ -179,7 +178,7 @@ function checkIsArc(): boolean {
 
     // Arc固有のCSS変数が存在すればArc
     return arcPaletteTitle !== "";
-  } catch (error) {
+  } catch {
     // エラーが発生した場合はArcではない
     return false;
   }

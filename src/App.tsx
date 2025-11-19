@@ -12,6 +12,7 @@ import {NoSignal} from "./components/layout/NoSignal";
 import {isMobileDevice} from "./utils/deviceDetection";
 import {CameraStage} from "./components/layers/CameraStage";
 import {Countdown} from "./components/layout/Countdown";
+import {checkMediaPermissions} from "./utils/permissionChecker";
 
 /* ---------- 定数 ---------- */
 const NUM_EFFECTS = 9;
@@ -31,6 +32,12 @@ function FullCameraApp() {
   const [isNoSignalDetected, setIsNoSignalDetected] = useState(true); // 初期状態では信号なし
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [permissionError, setPermissionError] = useState<{
+    title: string;
+    message: string;
+    solution: string[];
+    technicalDetails?: string;
+  } | null>(null);
   const [layout, setLayout] = useState<LayoutMode>("NoSignal");
 
   // 各レイヤー用の独立したエフェクト信号
@@ -200,9 +207,12 @@ function FullCameraApp() {
   const requestPermissions = async () => {
     try {
       console.log("権限要求開始");
+      setPermissionError(null); // エラーをクリア
+
       const width = isMobileDevice() ? 1920 : 1080;
       const height = isMobileDevice() ? 1080 : 1920;
-      // 基本制約で権限を要求
+
+      // 理想的な制約
       const constraints = {
         video: {
           facingMode: "environment",
@@ -221,52 +231,67 @@ function FullCameraApp() {
 
       console.log("使用する制約:", constraints);
 
-      // カメラとマイクの許可を要求
-      const permissionStream = await navigator.mediaDevices.getUserMedia(constraints);
+      // 権限チェック（詳細なエラー解析付き）
+      const result = await checkMediaPermissions(constraints);
 
-      // マイクストリームを保存（AudioReceiverで使用）
-      audioStreamRef.current = permissionStream;
+      if (result.granted) {
+        // 成功：ストリームを取得して保存
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        audioStreamRef.current = stream;
 
-      console.log("権限が許可されました");
-      setPermissionsGranted(true);
-      setShowPermissionPrompt(false);
+        console.log("権限が許可されました");
+        setPermissionsGranted(true);
+        setShowPermissionPrompt(false);
 
-      // 権限が許可された後に初期化を実行
-      await initializeCamera();
-    } catch (error) {
-      console.error("権限の取得に失敗しました:", error);
+        // カメラ初期化
+        await initializeCamera();
+      } else {
+        // 失敗：エラー情報を表示
+        console.error("権限エラー:", result.error);
+        if (result.error) {
+          setPermissionError({
+            title: result.error.title,
+            message: result.error.message,
+            solution: result.error.solution,
+            technicalDetails: result.error.technicalDetails,
+          });
+        }
 
-      // エラーの詳細をログ出力
-      if (error instanceof Error) {
-        console.error("エラー名:", error.name);
-        console.error("エラーメッセージ:", error.message);
-      }
+        // 基本制約で再試行（システムエラー以外の場合）
+        if (result.error?.type !== "system") {
+          console.log("基本制約で再試行");
+          try {
+            const basicResult = await checkMediaPermissions({
+              video: true,
+              audio: true,
+            });
 
-      // より基本的な制約で再試行
-      if (error instanceof Error && error.name === "NotAllowedError") {
-        console.log("基本制約で再試行");
-        try {
-          const basicConstraints = {
-            video: true,
-            audio: true,
-          };
+            if (basicResult.granted) {
+              const basicStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true,
+              });
+              audioStreamRef.current = basicStream;
 
-          const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
-
-          // マイクストリームを保存（AudioReceiverで使用）
-          audioStreamRef.current = basicStream;
-
-          console.log("基本制約での権限取得に成功");
-          setPermissionsGranted(true);
-          setShowPermissionPrompt(false);
-          await initializeCamera();
-          return;
-        } catch (retryError) {
-          console.error("再試行も失敗:", retryError);
+              console.log("基本制約での権限取得に成功");
+              setPermissionsGranted(true);
+              setShowPermissionPrompt(false);
+              setPermissionError(null);
+              await initializeCamera();
+            }
+          } catch (retryError) {
+            console.error("再試行も失敗:", retryError);
+          }
         }
       }
-
-      setShowPermissionPrompt(false);
+    } catch (error) {
+      console.error("予期しないエラー:", error);
+      setPermissionError({
+        title: "予期しないエラー",
+        message: "権限の取得中に問題が発生しました。",
+        solution: ["ページを再読み込みしてください"],
+        technicalDetails: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -471,6 +496,10 @@ function FullCameraApp() {
             isVisible={isNoSignalDetected}
             onRequestPermissions={requestPermissions}
             showPermissionRequest={!permissionsGranted}
+            errorMessage={permissionError?.message || null}
+            errorTitle={permissionError?.title || null}
+            errorSolution={permissionError?.solution || null}
+            debugInfo={permissionError?.technicalDetails || null}
           />
         )}
 

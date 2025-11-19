@@ -15,12 +15,20 @@ interface InitialScreenProps {
   isVisible: boolean;
   onRequestPermissions?: () => void;
   showPermissionRequest?: boolean;
+  errorMessage?: string | null;
+  errorTitle?: string | null;
+  errorSolution?: string[] | null;
+  debugInfo?: string | null;
 }
 
 export const InitialScreen: React.FC<InitialScreenProps> = ({
   isVisible,
   onRequestPermissions,
   showPermissionRequest = false,
+  errorMessage = null,
+  errorTitle = null,
+  errorSolution = null,
+  debugInfo = null,
 }) => {
   const [logoScale, setLogoScale] = useState(1);
   const [logoOpacity, setLogoOpacity] = useState(0);
@@ -31,6 +39,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   // 画面サイズの監視
   useEffect(() => {
@@ -214,8 +223,139 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
               <p>このサイトではカメラとマイクを使用します</p>
             </div>
           </div>
+
+          {/* エラーメッセージの表示 */}
+          {errorMessage && (
+            <div
+              style={{
+                backgroundColor: "rgba(255, 59, 48, 0.15)",
+                border: "1px solid rgba(255, 59, 48, 0.5)",
+                borderRadius: "8px",
+                padding: "16px",
+                marginTop: "12px",
+                marginBottom: "8px",
+                textAlign: "left",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                }}
+              >
+                <div style={{fontSize: "24px", flexShrink: 0}}>⚠️</div>
+                <div style={{flex: 1, minWidth: 0}}>
+                  {/* エラータイトル */}
+                  {errorTitle && (
+                    <h4
+                      style={{
+                        margin: "0 0 8px 0",
+                        color: "#fff",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {errorTitle}
+                    </h4>
+                  )}
+
+                  {/* エラーメッセージ */}
+                  <p
+                    style={{
+                      margin: "0 0 12px 0",
+                      color: "#fff",
+                      fontSize: "14px",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    {errorMessage}
+                  </p>
+
+                  {/* 対処方法 */}
+                  {errorSolution && errorSolution.length > 0 && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px",
+                        backgroundColor: "rgba(0, 0, 0, 0.3)",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: "0 0 8px 0",
+                          color: "#fff",
+                          fontSize: "13px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        📱 対処方法：
+                      </p>
+                      <ol
+                        style={{
+                          margin: 0,
+                          paddingLeft: "20px",
+                          color: "#fff",
+                          fontSize: "13px",
+                          lineHeight: "1.8",
+                        }}
+                      >
+                        {errorSolution.map((step, index) => (
+                          <li key={index} style={{marginBottom: "4px"}}>
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* デバッグ情報 */}
+                  {debugInfo && (
+                    <>
+                      <button
+                        onClick={() => setShowDebugInfo(!showDebugInfo)}
+                        style={{
+                          marginTop: "12px",
+                          padding: "6px 12px",
+                          fontSize: "12px",
+                          backgroundColor: "rgba(255, 255, 255, 0.1)",
+                          border: "1px solid rgba(255, 255, 255, 0.3)",
+                          borderRadius: "4px",
+                          color: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {showDebugInfo ? "技術情報を隠す" : "技術情報を表示"}
+                      </button>
+                      {showDebugInfo && (
+                        <pre
+                          style={{
+                            marginTop: "8px",
+                            padding: "8px",
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            borderRadius: "4px",
+                            fontSize: "11px",
+                            lineHeight: "1.4",
+                            color: "#ccc",
+                            overflow: "auto",
+                            maxHeight: "120px",
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {debugInfo}
+                        </pre>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <button className="permission-button" onClick={onRequestPermissions}>
-            許可する
+            {errorMessage ? "再試行" : "許可する"}
           </button>
         </div>
       )}

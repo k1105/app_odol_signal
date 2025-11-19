@@ -6,6 +6,7 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 
 export default defineConfig({
   server: {
+    host: true, // ネットワーク上の他のデバイスからアクセス可能にする
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin",

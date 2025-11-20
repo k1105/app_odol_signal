@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
-import odolLogo from "/assets/odol_logo.png";
+import instructionGif from "/assets/instruction.gif";
+import initialscreenOverlay from "/assets/frame/initialscreen_overlay.png";
 import "./InitialScreen.css";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -32,8 +33,6 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
 }) => {
   const [logoScale, setLogoScale] = useState(1);
   const [logoOpacity, setLogoOpacity] = useState(0);
-  const [textOpacity, setTextOpacity] = useState(0);
-  const [pulseOpacity, setPulseOpacity] = useState(0);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
@@ -122,34 +121,14 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
         setLogoOpacity(1);
         setLogoScale(1);
       }, 100);
-
-      // テキストのフェードイン
-      setTimeout(() => {
-        setTextOpacity(1);
-      }, 800);
-
-      // パルス効果の開始
-      setTimeout(() => {
-        setPulseOpacity(1);
-      }, 1200);
     } else {
       // フェードアウト
       setLogoOpacity(0);
-      setTextOpacity(0);
-      setPulseOpacity(0);
       setLogoScale(0.8);
     }
   }, [isVisible]);
 
   if (!isVisible) return null;
-
-  // 動的な位置調整 - svhを使用してモバイルブラウザの動的ビューポートに対応
-  const getDescriptionBottom = () => {
-    if (showPermissionRequest || showInstallPrompt) {
-      return isSmallScreen ? "max(120px, 15svh)" : "max(200px, 20svh)";
-    }
-    return isSmallScreen ? "max(40px, 5svh)" : "max(60px, 8svh)";
-  };
 
   const getPermissionBottom = () => {
     if (showInstallPrompt) {
@@ -160,19 +139,12 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
 
   return (
     <div className="initial-screen">
-      {/* 背景のグラデーション効果 */}
-      <div className="background-gradient" />
-
-      {/* パルス効果 */}
-      <div
-        className="pulse-effect"
-        style={{
-          animation:
-            pulseOpacity > 0 ? "pulse 2s ease-in-out infinite" : "none",
-          opacity: pulseOpacity,
-        }}
+      {/* オーバーレイ画像 */}
+      <img
+        src={initialscreenOverlay}
+        alt="Overlay"
+        className="initial-screen-overlay"
       />
-
       {/* メインコンテンツ */}
       <div className="main-content">
         <div
@@ -182,181 +154,189 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
             opacity: logoOpacity,
           }}
         >
-          <img src={odolLogo} alt="Odol Signal Logo" className="logo-image" />
+          <img src={instructionGif} alt="Instruction" className="logo-image" />
         </div>
 
-        {/* 信号待機インジケーター */}
-        <div className="signal-indicator" style={{opacity: textOpacity}}>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="signal-dot" />
-          ))}
-        </div>
+        <p className="description-text">
+          <span
+            style={{
+              fontSize: "4rem",
+              fontFamily: '"Noto Serif JP", serif',
+              lineHeight: "0.5rem",
+              position: "relative",
+              top: "0.15em",
+            }}
+          >
+            パ
+          </span>
+          フォーマンス中、
+          <br />
+          場内には超音波信号が飛び交います。
+          <br />
+          信号を受信すると、この画面を開く
+          <br />
+          全てのスマホが一斉に変化します。
+        </p>
 
-        {/* 説明テキスト */}
-        <div
-          className="description-text"
-          style={{
-            bottom: getDescriptionBottom(),
-            opacity: textOpacity * 0.7,
-          }}
-        >
+        {/* 権限要求ボタン - instruction.gifの直下に配置 */}
+        {showPermissionRequest && onRequestPermissions && (
+          <button
+            className="permission-button-simple"
+            onClick={onRequestPermissions}
+            style={{
+              opacity: logoOpacity,
+            }}
+          >
+            マイクとカメラのアクセスを許可
+          </button>
+        )}
+
+        <div className="performer-text">
           <p>
-            音声信号を受信すると
+            Performer
             <br />
-            リアルタイムでエフェクトが適用されます
+            ●: HTK ●: Carrot ●: Wagyu & JOJI
           </p>
+          <p>
+            VJ / Development <br />
+            Kanata Yamagishi
+          </p>
+          <p>11.22.2025 at Sakabito</p>
         </div>
       </div>
 
-      {/* 権限要求UI */}
-      {showPermissionRequest && onRequestPermissions && (
+      {/* エラーメッセージの表示 - 画面下部に配置 */}
+      {showPermissionRequest && errorMessage && (
         <div
-          className="permission-ui"
+          className="permission-error-ui"
           style={{
             bottom: getPermissionBottom(),
           }}
         >
-          <div className="permission-header">
-            <div className="permission-icon">📹</div>
-            <div className="permission-content">
-              <h3>カメラとマイクの許可</h3>
-              <p>このサイトではカメラとマイクを使用します</p>
-            </div>
-          </div>
-
-          {/* エラーメッセージの表示 */}
-          {errorMessage && (
+          <div
+            style={{
+              backgroundColor: "rgba(255, 59, 48, 0.15)",
+              border: "1px solid rgba(255, 59, 48, 0.5)",
+              borderRadius: "8px",
+              padding: "16px",
+              textAlign: "left",
+            }}
+          >
             <div
               style={{
-                backgroundColor: "rgba(255, 59, 48, 0.15)",
-                border: "1px solid rgba(255, 59, 48, 0.5)",
-                borderRadius: "8px",
-                padding: "16px",
-                marginTop: "12px",
-                marginBottom: "8px",
-                textAlign: "left",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                }}
-              >
-                <div style={{fontSize: "24px", flexShrink: 0}}>⚠️</div>
-                <div style={{flex: 1, minWidth: 0}}>
-                  {/* エラータイトル */}
-                  {errorTitle && (
-                    <h4
+              <div style={{fontSize: "24px", flexShrink: 0}}>⚠️</div>
+              <div style={{flex: 1, minWidth: 0}}>
+                {/* エラータイトル */}
+                {errorTitle && (
+                  <h4
+                    style={{
+                      margin: "0 0 8px 0",
+                      color: "#fff",
+                      fontSize: "16px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {errorTitle}
+                  </h4>
+                )}
+
+                {/* エラーメッセージ */}
+                <p
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#fff",
+                    fontSize: "14px",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  {errorMessage}
+                </p>
+
+                {/* 対処方法 */}
+                {errorSolution && errorSolution.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "12px",
+                      backgroundColor: "rgba(0, 0, 0, 0.3)",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    <p
                       style={{
                         margin: "0 0 8px 0",
                         color: "#fff",
-                        fontSize: "16px",
+                        fontSize: "13px",
                         fontWeight: "bold",
                       }}
                     >
-                      {errorTitle}
-                    </h4>
-                  )}
-
-                  {/* エラーメッセージ */}
-                  <p
-                    style={{
-                      margin: "0 0 12px 0",
-                      color: "#fff",
-                      fontSize: "14px",
-                      lineHeight: "1.6",
-                    }}
-                  >
-                    {errorMessage}
-                  </p>
-
-                  {/* 対処方法 */}
-                  {errorSolution && errorSolution.length > 0 && (
-                    <div
+                      📱 対処方法：
+                    </p>
+                    <ol
                       style={{
-                        marginTop: "12px",
-                        padding: "12px",
-                        backgroundColor: "rgba(0, 0, 0, 0.3)",
-                        borderRadius: "6px",
+                        margin: 0,
+                        paddingLeft: "20px",
+                        color: "#fff",
+                        fontSize: "13px",
+                        lineHeight: "1.8",
                       }}
                     >
-                      <p
-                        style={{
-                          margin: "0 0 8px 0",
-                          color: "#fff",
-                          fontSize: "13px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        📱 対処方法：
-                      </p>
-                      <ol
-                        style={{
-                          margin: 0,
-                          paddingLeft: "20px",
-                          color: "#fff",
-                          fontSize: "13px",
-                          lineHeight: "1.8",
-                        }}
-                      >
-                        {errorSolution.map((step, index) => (
-                          <li key={index} style={{marginBottom: "4px"}}>
-                            {step}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
+                      {errorSolution.map((step, index) => (
+                        <li key={index} style={{marginBottom: "4px"}}>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
 
-                  {/* デバッグ情報 */}
-                  {debugInfo && (
-                    <>
-                      <button
-                        onClick={() => setShowDebugInfo(!showDebugInfo)}
+                {/* デバッグ情報 */}
+                {debugInfo && (
+                  <>
+                    <button
+                      onClick={() => setShowDebugInfo(!showDebugInfo)}
+                      style={{
+                        marginTop: "12px",
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        backgroundColor: "rgba(255, 255, 255, 0.1)",
+                        border: "1px solid rgba(255, 255, 255, 0.3)",
+                        borderRadius: "4px",
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {showDebugInfo ? "技術情報を隠す" : "技術情報を表示"}
+                    </button>
+                    {showDebugInfo && (
+                      <pre
                         style={{
-                          marginTop: "12px",
-                          padding: "6px 12px",
-                          fontSize: "12px",
-                          backgroundColor: "rgba(255, 255, 255, 0.1)",
-                          border: "1px solid rgba(255, 255, 255, 0.3)",
+                          marginTop: "8px",
+                          padding: "8px",
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
                           borderRadius: "4px",
-                          color: "#fff",
-                          cursor: "pointer",
+                          fontSize: "11px",
+                          lineHeight: "1.4",
+                          color: "#ccc",
+                          overflow: "auto",
+                          maxHeight: "120px",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
                         }}
                       >
-                        {showDebugInfo ? "技術情報を隠す" : "技術情報を表示"}
-                      </button>
-                      {showDebugInfo && (
-                        <pre
-                          style={{
-                            marginTop: "8px",
-                            padding: "8px",
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            borderRadius: "4px",
-                            fontSize: "11px",
-                            lineHeight: "1.4",
-                            color: "#ccc",
-                            overflow: "auto",
-                            maxHeight: "120px",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {debugInfo}
-                        </pre>
-                      )}
-                    </>
-                  )}
-                </div>
+                        {debugInfo}
+                      </pre>
+                    )}
+                  </>
+                )}
               </div>
             </div>
-          )}
-
-          <button className="permission-button" onClick={onRequestPermissions}>
-            {errorMessage ? "再試行" : "許可する"}
-          </button>
+          </div>
         </div>
       )}
 

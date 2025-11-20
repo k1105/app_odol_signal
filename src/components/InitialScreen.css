@@ -51,6 +51,18 @@
   overflow: hidden;
 }
 
+.initial-screen-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .background-gradient {
   position: absolute;
   top: 0;
@@ -89,9 +101,61 @@
 }
 
 .logo-image {
-  width: 400px;
-  height: 400px;
+  width: 300px;
   object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.description-text {
+  text-align: left;
+  margin-bottom: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1c8870;
+  line-height: 2rem;
+  max-width: 300px;
+}
+
+.permission-button-simple {
+  background-color: transparent;
+  border: 2px solid #1c8870;
+  color: #1c8870;
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 30px;
+  border-radius: 0px;
+  font-family: inherit;
+}
+
+.permission-button-simple:hover {
+  background-color: rgba(28, 136, 112, 0.1);
+  border-color: #1c8870;
+}
+
+.permission-button-simple:active {
+  background-color: rgba(28, 136, 112, 0.2);
+}
+
+.performer-text {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 0;
+  right: 0;
+  color: #906b97;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 30px;
+  p {
+    margin: 0;
+  }
 }
 
 .logo-shine {
@@ -110,57 +174,10 @@
   animation: rotate 10s linear infinite;
 }
 
-.signal-indicator {
-  display: flex;
-  gap: 8px;
-  margin-top: 30px;
-  transition: opacity 1s ease-in-out;
-}
-
-.signal-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #fff;
-}
-
-.signal-dot:nth-child(1) {
-  animation: signalPulse 1.5s ease-in-out infinite 0s;
-}
-
-.signal-dot:nth-child(2) {
-  animation: signalPulse 1.5s ease-in-out infinite 0.2s;
-}
-
-.signal-dot:nth-child(3) {
-  animation: signalPulse 1.5s ease-in-out infinite 0.4s;
-}
-
-.description-text {
+.permission-error-ui {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  text-align: center;
-  transition: opacity 1s ease-in-out;
-}
-
-.description-text p {
-  font-size: 14px;
-  color: #888;
-  margin: 0;
-  line-height: 1.4;
-  max-width: 300px;
-}
-
-.permission-ui {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
   max-width: 320px;
   width: 90%;
   z-index: 3;
@@ -322,13 +339,14 @@
     margin-top: 20px;
   }
 
-  .description-text {
-    bottom: max(10px, 3svh) !important;
+  .permission-button-simple {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 14px;
   }
 
-  .permission-ui {
+  .permission-error-ui {
     bottom: max(10px, 3svh);
-    padding: 16px;
   }
 
   .install-ui {
@@ -356,13 +374,14 @@
     margin-top: 15px;
   }
 
-  .description-text {
-    bottom: max(5px, 2svh) !important;
+  .permission-button-simple {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 13px;
   }
 
-  .permission-ui {
+  .permission-error-ui {
     bottom: max(5px, 2svh);
-    padding: 12px;
   }
 
   .install-ui {

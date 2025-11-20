@@ -191,7 +191,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
           </button>
         )}
 
-        <div className="performer-text">
+        {/* <div className="performer-text">
           <p>
             Performer
             <br />
@@ -202,7 +202,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
             Kanata Yamagishi
           </p>
           <p>11.22.2025 at Sakabito</p>
-        </div>
+        </div> */}
       </div>
 
       {/* エラーメッセージの表示 - 画面下部に配置 */}

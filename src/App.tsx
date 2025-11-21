@@ -19,6 +19,7 @@ import {isMobileDevice} from "./utils/deviceDetection";
 import {CameraStage} from "./components/layers/CameraStage";
 import {Countdown} from "./components/layout/Countdown";
 import {checkMediaPermissions} from "./utils/permissionChecker";
+import {PerformerName} from "./components/PerformerName";
 
 /* ---------- 定数 ---------- */
 const NUM_EFFECTS = 9;
@@ -46,6 +47,7 @@ function FullCameraApp() {
     technicalDetails?: string;
   } | null>(null);
   const [layout, setLayout] = useState<LayoutMode>("NoSignal");
+  const [showPerformerName, setShowPerformerName] = useState(false);
 
   // 各レイヤー用の独立したエフェクト信号
   const [overlayEffectSignal, setOverlayEffectSignal] = useState(-1); // 信号0-2用
@@ -420,6 +422,16 @@ function FullCameraApp() {
     console.log(layout);
   }, [layout]);
 
+  // パフォーマー名表示の制御
+  useEffect(() => {
+    if (currentPlayerSignal) {
+      setShowPerformerName(true);
+    } else {
+      // 信号がなくなったら非表示
+      setShowPerformerName(false);
+    }
+  }, [currentPlayerSignal]);
+
   /* ---------- UI ---------- */
   return (
     <>
@@ -522,6 +534,12 @@ function FullCameraApp() {
             {layout === "NoSignal" && (
               <NoSignal currentPlayerSignal={currentPlayerSignal} />
             )}
+
+            {/* パフォーマー名表示 */}
+            <PerformerName
+              playerSignal={currentPlayerSignal}
+              isVisible={showPerformerName}
+            />
           </>
         )}
 

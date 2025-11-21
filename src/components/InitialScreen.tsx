@@ -3,14 +3,15 @@ import instructionGif from "/assets/instruction.gif";
 import initialscreenOverlay from "/assets/frame/initialscreen_overlay.png";
 import "./InitialScreen.css";
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
+// PWA関連のインターフェース（無効化）
+// interface BeforeInstallPromptEvent extends Event {
+//   readonly platforms: string[];
+//   readonly userChoice: Promise<{
+//     outcome: "accepted" | "dismissed";
+//     platform: string;
+//   }>;
+//   prompt(): Promise<void>;
+// }
 
 interface InitialScreenProps {
   isVisible: boolean;
@@ -32,11 +33,11 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
   const [logoScale, setLogoScale] = useState(1);
   const [logoOpacity, setLogoOpacity] = useState(0);
 
-  // PWA関連のステート
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [showIosGuide, setShowIosGuide] = useState(false); // iOS用ガイド表示フラグ
+  // PWA関連のステート（無効化）
+  // const [deferredPrompt, setDeferredPrompt] =
+  //   useState<BeforeInstallPromptEvent | null>(null);
+  // const [isInstalled, setIsInstalled] = useState(false);
+  // const [showIosGuide, setShowIosGuide] = useState(false); // iOS用ガイド表示フラグ
 
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
@@ -48,62 +49,62 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // PWAインストールプロンプトの監視
-  useEffect(() => {
-    // 既にPWAモードかチェック
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as {standalone?: boolean}).standalone ===
-        true;
+  // PWAインストールプロンプトの監視（無効化）
+  // useEffect(() => {
+  //   // 既にPWAモードかチェック
+  //   const isStandalone =
+  //     window.matchMedia("(display-mode: standalone)").matches ||
+  //     (window.navigator as unknown as {standalone?: boolean}).standalone ===
+  //       true;
 
-    if (isStandalone) {
-      setIsInstalled(true);
-      return;
-    }
+  //   if (isStandalone) {
+  //     setIsInstalled(true);
+  //     return;
+  //   }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault(); // ブラウザの自動プロンプトをキャンセル
-      setDeferredPrompt(e as BeforeInstallPromptEvent); // イベントを保持
-    };
+  //   const handleBeforeInstallPrompt = (e: Event) => {
+  //     e.preventDefault(); // ブラウザの自動プロンプトをキャンセル
+  //     setDeferredPrompt(e as BeforeInstallPromptEvent); // イベントを保持
+  //   };
 
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-      setShowIosGuide(false);
-    };
+  //   const handleAppInstalled = () => {
+  //     setIsInstalled(true);
+  //     setDeferredPrompt(null);
+  //     setShowIosGuide(false);
+  //   };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
+  //   window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+  //   window.addEventListener("appinstalled", handleAppInstalled);
 
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
-  }, []);
+  //   return () => {
+  //     window.removeEventListener(
+  //       "beforeinstallprompt",
+  //       handleBeforeInstallPrompt
+  //     );
+  //     window.removeEventListener("appinstalled", handleAppInstalled);
+  //   };
+  // }, []);
 
-  // インストールボタンクリック時のハンドラ
-  const handleInstallClick = async () => {
-    // 1. Chrome / Android / Edge (native prompt supported)
-    if (deferredPrompt) {
-      try {
-        await deferredPrompt.prompt(); // ネイティブのインストールダイアログを表示
-        const {outcome} = await deferredPrompt.userChoice;
-        if (outcome === "accepted") {
-          setDeferredPrompt(null);
-        }
-      } catch (error) {
-        console.error("Install prompt error:", error);
-      }
-    }
-    // 2. iOS / Safari (native prompt NOT supported)
-    else {
-      // iOSや非対応ブラウザの場合、手動インストールのガイドを表示
-      setShowIosGuide(true);
-    }
-  };
+  // インストールボタンクリック時のハンドラ（無効化）
+  // const handleInstallClick = async () => {
+  //   // 1. Chrome / Android / Edge (native prompt supported)
+  //   if (deferredPrompt) {
+  //     try {
+  //       await deferredPrompt.prompt(); // ネイティブのインストールダイアログを表示
+  //       const {outcome} = await deferredPrompt.userChoice;
+  //       if (outcome === "accepted") {
+  //         setDeferredPrompt(null);
+  //       }
+  //     } catch (error) {
+  //       console.error("Install prompt error:", error);
+  //     }
+  //   }
+  //   // 2. iOS / Safari (native prompt NOT supported)
+  //   else {
+  //     // iOSや非対応ブラウザの場合、手動インストールのガイドを表示
+  //     setShowIosGuide(true);
+  //   }
+  // };
 
   // アニメーション効果
   useEffect(() => {
@@ -117,22 +118,17 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
     }
   }, [isVisible]);
 
-  if (!isVisible && isInstalled) return null;
+  // isVisibleがfalseの場合は何も表示しない
+  if (!isVisible) return null;
 
   const getPermissionBottom = () => {
-    // インストールボタン等がある場合は少し上にずらす
-    const baseOffset = !isInstalled
-      ? isSmallScreen
-        ? 140
-        : 180
-      : isSmallScreen
-      ? 20
-      : 60;
+    // インストールボタン等がある場合は少し上にずらす（PWA無効化により簡略化）
+    const baseOffset = isSmallScreen ? 20 : 60;
     return `${baseOffset}px`;
   };
 
-  // iOSかどうか判定（ガイド表示用）
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  // iOSかどうか判定（ガイド表示用）（無効化）
+  // const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
   return (
     <div className="initial-screen">
@@ -193,7 +189,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
           {/* ...既存のエラーUI（省略なしでそのまま使用してください）... */}
           <div
             style={{
-              backgroundColor: "rgba(255, 59, 48, 0.15)",
+              backgroundColor: "black",
               border: "1px solid rgba(255, 59, 48, 0.5)",
               borderRadius: "8px",
               padding: "16px",
@@ -216,12 +212,8 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
         </div>
       )}
 
-      {/* 【改善ポイント】
-        PWAインストールボタン 
-        deferredPromptがある(=Chrome/Android) または iOSの場合に表示 
-        インストール済みの場合は表示しない
-      */}
-      {isVisible &&
+      {/* PWAインストールUI（無効化） */}
+      {/* {isVisible &&
         !isInstalled &&
         (deferredPrompt || isIOS) &&
         !showIosGuide && (
@@ -230,10 +222,10 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
               <span className="icon">📱</span> アプリをインストールして参加
             </button>
           </div>
-        )}
+        )} */}
 
-      {/* iOS用 インストールガイドオーバーレイ */}
-      {showIosGuide && (
+      {/* iOS用 インストールガイドオーバーレイ（無効化） */}
+      {/* {showIosGuide && (
         <div
           className="ios-install-guide"
           onClick={() => setShowIosGuide(false)}
@@ -260,7 +252,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
           </div>
           <div className="ios-guide-arrow">⬇</div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

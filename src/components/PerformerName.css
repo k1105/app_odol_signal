@@ -1,0 +1,40 @@
+.performer-name-container {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.performer-color-label {
+  font-family: "Dela Gothic One", sans-serif;
+  color: white;
+  margin: 0;
+  text-align: left;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.performer-name-text {
+  font-family: "Dela Gothic One", sans-serif;
+  color: white;
+  margin: 0;
+  text-align: left;
+  font-size: 1.5rem;
+  display: inline-block;
+}
+
+.performer-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.performer-char-visible {
+  opacity: 1;
+  transform: translateY(0);
+}

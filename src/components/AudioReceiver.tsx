@@ -8,7 +8,7 @@ const CONFIG = {
   SIGNAL_DURATION: 1.0, // 信号長（秒）
   SAMPLE_RATE: 44100, // サンプリングレート
   FFT_SIZE: 1024, // FFT サイズ
-  DETECTION_THRESHOLD: 0.2, // 検出閾値
+  DETECTION_THRESHOLD: 0.4, // 検出閾値
   SMOOTHING: 0.8, // スムージング係数
 };
 
@@ -51,11 +51,8 @@ export function AudioReceiver({
 
       // 外部から渡されたストリームがある場合はそれを使用
       if (audioStream) {
-        console.log("AudioReceiver: 外部から渡されたマイクストリームを使用");
         stream = audioStream;
       } else {
-        // ストリームが渡されていない場合は新たに要求
-        console.log("AudioReceiver: マイクアクセス要求中...");
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             sampleRate: CONFIG.SAMPLE_RATE,
@@ -66,8 +63,6 @@ export function AudioReceiver({
           },
         });
       }
-
-      console.log("AudioReceiver: マイクアクセス成功");
 
       // AudioContextの作成
       const AudioContextClass =
@@ -94,8 +89,6 @@ export function AudioReceiver({
 
       microphoneRef.current.connect(filterRef.current);
       filterRef.current.connect(analyserRef.current);
-
-      console.log("AudioReceiver: 音声処理パイプライン構築完了");
       return true;
     } catch (error) {
       console.error("マイクアクセスエラー:", error);
@@ -112,11 +105,9 @@ export function AudioReceiver({
   // 検出ループ開始
   const startDetectionLoop = () => {
     if (!analyserRef.current) {
-      console.log("AudioReceiver: analyserがnullです");
       return;
     }
 
-    console.log("AudioReceiver: 検出ループ開始");
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -163,7 +154,7 @@ export function AudioReceiver({
           intensity = intensity / (range * 2 + 1) / 255.0;
 
           if (
-            intensity > CONFIG.DETECTION_THRESHOLD &&
+            intensity >= CONFIG.DETECTION_THRESHOLD &&
             intensity > maxIntensity
           ) {
             maxIntensity = intensity;
@@ -224,26 +215,18 @@ export function AudioReceiver({
 
   // 受信開始
   const startReceiving = async () => {
-    console.log("AudioReceiver: startReceiving開始");
-
     if (!audioContextRef.current) {
-      console.log(
-        "AudioReceiver: AudioContextが存在しないため、マイクアクセスを要求"
-      );
       const success = await requestMicrophoneAccess();
       if (!success) {
-        console.log("AudioReceiver: マイクアクセスに失敗");
         return;
       }
     }
 
     const audioContext = audioContextRef.current;
     if (audioContext && audioContext.state === "suspended") {
-      console.log("AudioReceiver: AudioContextを再開");
       await audioContext.resume();
     }
 
-    console.log("AudioReceiver: 検出ループを開始");
     startDetectionLoop();
   };
 
@@ -269,9 +252,6 @@ export function AudioReceiver({
 
     // 権限が許可されている場合のみ受信開始
     if (!permissionsGranted) {
-      console.log(
-        "AudioReceiver: 権限が許可されていないため、受信を開始しません"
-      );
       return;
     }
 

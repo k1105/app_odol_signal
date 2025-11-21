@@ -7,7 +7,11 @@ import {InitialScreen} from "./components/InitialScreen";
 //   type SignalLogEntry,
 // } from "./components/NewHamburgerMenu";
 // import type {LayoutMode} from "./components/NewHamburgerMenu";
-type LayoutMode = "NoSignal" | "BeginPerformance" | "OnPerformance" | "Countdown";
+type LayoutMode =
+  | "NoSignal"
+  | "BeginPerformance"
+  | "OnPerformance"
+  | "Countdown";
 import {OnPerformance} from "./components/layout/OnPerformance";
 import {BeginPerformance} from "./components/layout/BeginPerformance";
 import {NoSignal} from "./components/layout/NoSignal";
@@ -219,7 +223,6 @@ function FullCameraApp() {
   // 権限要求関数
   const requestPermissions = async () => {
     try {
-      console.log("権限要求開始");
       setPermissionError(null); // エラーをクリア
 
       const width = isMobileDevice() ? 1920 : 1080;
@@ -303,7 +306,8 @@ function FullCameraApp() {
         title: "予期しないエラー",
         message: "権限の取得中に問題が発生しました。",
         solution: ["ページを再読み込みしてください"],
-        technicalDetails: error instanceof Error ? error.message : String(error),
+        technicalDetails:
+          error instanceof Error ? error.message : String(error),
       });
     }
   };

@@ -208,14 +208,6 @@ export function drawSnakePathToCanvas(
 
   const s = state.scale;
 
-  // テキストを描画
-  ctx.fillStyle = "rgb(255, 255, 255)";
-  ctx.font =
-    "20px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Odol Signal", state.textPos.x + 30, state.textPos.y - 30);
-
   // 軌跡を描画
   ctx.strokeStyle = "rgb(255, 255, 255)";
   ctx.lineWidth = state.weight;

@@ -20,6 +20,7 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
   const frameCountRef = useRef<number>(0);
   const circlesRef = useRef<Circle[]>([]);
   const lastClearFrameRef = useRef<number>(0);
+  const positionBufferRef = useRef<WebGLBuffer | null>(null);
 
   // プレイヤーシグナルに応じた色を決定
   const playerColor = useMemo<[number, number, number]>(() => {
@@ -97,6 +98,8 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
     const onResize = () => {
       if (!glRef.current || !canvasRef.current) return;
       sizeCanvasToDisplay(canvasRef.current, glRef.current);
+      // リサイズ時に円を再生成
+      generateCircles(canvasRef.current.width, canvasRef.current.height);
     };
     window.addEventListener("resize", onResize);
 
@@ -109,11 +112,23 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
       };
     }
 
+    // バッファを一度だけ作成（再利用）
+    if (!positionBufferRef.current) {
+      positionBufferRef.current = gl.createBuffer();
+      if (!positionBufferRef.current) {
+        console.error("Failed to create position buffer");
+        return;
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBufferRef.current);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+        gl.STATIC_DRAW
+      );
+    }
+
     const draw = () => {
       try {
-        // DPR/リサイズ
-        sizeCanvasToDisplay(canvas, gl);
-
         frameCountRef.current++;
 
         // 30フレームごとにクリアして円を再生成
@@ -192,14 +207,8 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
           );
         }
 
-        // 頂点データ（フルスクリーンクアッド）
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
-          new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-          gl.STATIC_DRAW
-        );
+        // 再利用可能なバッファを使用
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBufferRef.current);
 
         const positionLocation = gl.getAttribLocation(
           playerNameProgramRef.current!,
@@ -223,6 +232,11 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
+      // バッファのクリーンアップ
+      if (glRef.current && positionBufferRef.current) {
+        glRef.current.deleteBuffer(positionBufferRef.current);
+        positionBufferRef.current = null;
+      }
     };
     // playerColorはuseMemoでメモ化されているため、依存配列から除外
     // currentPlayerSignalが変わった時だけ再実行される

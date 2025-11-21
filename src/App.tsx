@@ -354,6 +354,22 @@ function FullCameraApp() {
     if (initedRef.current) return;
     initedRef.current = true;
 
+    // PWA環境かどうかをチェックしてコンソールに出力
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as {standalone?: boolean}).standalone ===
+        true;
+    console.log(
+      `[PWA環境チェック] ${
+        isStandalone ? "✅ PWA環境で動作中" : "❌ 通常のブラウザで動作中"
+      }`
+    );
+    if (isStandalone) {
+      console.log("  - display-mode: standalone");
+    } else {
+      console.log("  - display-mode: browser");
+    }
+
     // 全てのブラウザで権限プロンプトを表示
     console.log("権限プロンプトを表示");
     setShowPermissionPrompt(true);
@@ -509,17 +525,16 @@ function FullCameraApp() {
           </>
         )}
 
-        {!permissionsGranted && (
-          <InitialScreen
-            isVisible={isNoSignalDetected}
-            onRequestPermissions={requestPermissions}
-            showPermissionRequest={!permissionsGranted}
-            errorMessage={permissionError?.message || null}
-            errorTitle={permissionError?.title || null}
-            errorSolution={permissionError?.solution || null}
-            debugInfo={permissionError?.technicalDetails || null}
-          />
-        )}
+        {/* InitialScreenは常にマウントして、PWAインストールプロンプトのイベントリスナーを確実に登録 */}
+        <InitialScreen
+          isVisible={!permissionsGranted && isNoSignalDetected}
+          onRequestPermissions={requestPermissions}
+          showPermissionRequest={!permissionsGranted}
+          errorMessage={permissionError?.message || null}
+          errorTitle={permissionError?.title || null}
+          errorSolution={permissionError?.solution || null}
+          debugInfo={permissionError?.technicalDetails || null}
+        />
 
         {/* ハンバーガーメニュー - コメントアウト */}
         {/* <NewHamburgerMenu

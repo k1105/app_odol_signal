@@ -39,6 +39,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
   const [isInstalled, setIsInstalled] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [showManualInstallGuide, setShowManualInstallGuide] = useState(false);
 
   // 画面サイズの監視
   useEffect(() => {
@@ -57,30 +58,54 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
   // PWAインストールプロンプトの処理
   useEffect(() => {
     // PWAが既にインストールされているかチェック
-    if (
+    const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as unknown as {standalone?: boolean}).standalone ===
-        true
-    ) {
+        true;
+
+    console.log("[InitialScreen] PWA環境チェック:", {
+      isStandalone,
+      displayMode: window.matchMedia("(display-mode: standalone)").matches,
+      navigatorStandalone: (
+        window.navigator as unknown as {standalone?: boolean}
+      ).standalone,
+    });
+
+    if (isStandalone) {
+      console.log(
+        "[InitialScreen] PWA環境で動作中 - インストールプロンプトを表示しません"
+      );
       setIsInstalled(true);
       return;
     }
 
     // beforeinstallpromptイベントをリッスン
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log(
+        "[InitialScreen] beforeinstallpromptイベントを受信しました",
+        e
+      );
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // 少し遅延させてからプロンプトを表示
-      setTimeout(() => setShowInstallPrompt(true), 1000);
+      const promptEvent = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(promptEvent);
+      console.log("[InitialScreen] deferredPromptを設定しました", {
+        platforms: promptEvent.platforms,
+      });
+      // プロンプトの表示は、isVisibleとdeferredPromptの両方が揃った時に別のuseEffectで処理
     };
 
     // appinstalledイベントをリッスン
     const handleAppInstalled = () => {
+      console.log("[InitialScreen] appinstalledイベントを受信しました");
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
     };
 
+    // イベントリスナーを登録（isVisibleに関係なく登録）
+    console.log(
+      "[InitialScreen] beforeinstallpromptイベントリスナーを登録しました"
+    );
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
 
@@ -93,21 +118,100 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+  // beforeinstallpromptイベントが一定時間内に発火しない場合、
+  // 手動インストール方法を案内するUIを表示する
+  // ただし、deferredPromptがある場合は自動プロンプトを優先する
+  useEffect(() => {
+    if (isInstalled || deferredPrompt || showInstallPrompt) return; // deferredPromptがある場合は手動案内を表示しない
 
-    deferredPrompt.prompt();
-    const {outcome} = await deferredPrompt.userChoice;
+    const manualInstallTimer = setTimeout(() => {
+      if (!isInstalled && !deferredPrompt && !showInstallPrompt) {
+        console.log(
+          "[InitialScreen] beforeinstallpromptイベントが発火しなかったため、手動インストール案内を表示します"
+        );
+        setShowManualInstallGuide(true);
+      }
+    }, 5000); // 5秒後にチェック
 
-    if (outcome === "accepted") {
-      console.log("PWAがインストールされました");
-      setIsInstalled(true);
-    } else {
-      console.log("PWAのインストールがキャンセルされました");
+    return () => {
+      clearTimeout(manualInstallTimer);
+    };
+  }, [isInstalled, deferredPrompt, showInstallPrompt]);
+
+  // isVisibleがtrueになった時に、既にdeferredPromptがある場合はプロンプトを表示
+  useEffect(() => {
+    console.log("[InitialScreen] isVisible/deferredPrompt/isInstalled状態:", {
+      isVisible,
+      hasDeferredPrompt: !!deferredPrompt,
+      isInstalled,
+    });
+
+    if (isVisible && deferredPrompt && !isInstalled && !showInstallPrompt) {
+      console.log(
+        "[InitialScreen] 条件を満たしたため、インストールプロンプトを表示します"
+      );
+      // 少し遅延させてからプロンプトを表示（ユーザー体験のため）
+      const timer = setTimeout(() => {
+        setShowInstallPrompt(true);
+        setShowManualInstallGuide(false); // 自動プロンプトが表示される場合は手動案内を非表示
+      }, 1000);
+      return () => clearTimeout(timer);
     }
 
-    setDeferredPrompt(null);
-    setShowInstallPrompt(false);
+    // isVisibleがtrueで、deferredPromptがない場合、手動インストール案内を表示
+    // ただし、deferredPromptが後から設定される可能性があるため、少し待つ
+    if (
+      isVisible &&
+      !deferredPrompt &&
+      !isInstalled &&
+      !showInstallPrompt &&
+      !showManualInstallGuide
+    ) {
+      const timer = setTimeout(() => {
+        // 再度チェックして、deferredPromptがまだない場合のみ表示
+        if (!deferredPrompt && !showInstallPrompt) {
+          setShowManualInstallGuide(true);
+        }
+      }, 3000); // 3秒後に手動案内を表示（deferredPromptの設定を待つ）
+      return () => clearTimeout(timer);
+    }
+  }, [
+    isVisible,
+    deferredPrompt,
+    isInstalled,
+    showInstallPrompt,
+    showManualInstallGuide,
+  ]);
+
+  // showInstallPromptの状態を監視
+  useEffect(() => {
+    console.log("[InitialScreen] showInstallPrompt状態:", showInstallPrompt);
+  }, [showInstallPrompt]);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      console.warn("deferredPromptが存在しません");
+      return;
+    }
+
+    try {
+      // プロンプトを表示
+      await deferredPrompt.prompt();
+      const {outcome} = await deferredPrompt.userChoice;
+
+      if (outcome === "accepted") {
+        console.log("PWAがインストールされました");
+        setIsInstalled(true);
+      } else {
+        console.log("PWAのインストールがキャンセルされました");
+      }
+    } catch (error) {
+      console.error("PWAインストールプロンプトの表示に失敗しました:", error);
+    } finally {
+      // プロンプトは一度しか使用できないため、クリアする
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
+    }
   };
 
   // アニメーション効果
@@ -128,7 +232,9 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
     }
   }, [isVisible]);
 
-  if (!isVisible) return null;
+  // isVisibleがfalseでも、PWAインストールプロンプトは表示できるようにする
+  // ただし、メインコンテンツはisVisibleがtrueの時のみ表示
+  if (!isVisible && !showInstallPrompt) return null;
 
   const getPermissionBottom = () => {
     if (showInstallPrompt) {
@@ -139,60 +245,67 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
 
   return (
     <div className="initial-screen">
-      {/* オーバーレイ画像 */}
-      <img
-        src={initialscreenOverlay}
-        alt="Overlay"
-        className="initial-screen-overlay"
-      />
-      {/* メインコンテンツ */}
-      <div className="main-content">
-        <div
-          className="logo-container"
-          style={{
-            transform: `scale(${logoScale})`,
-            opacity: logoOpacity,
-          }}
-        >
-          <img src={instructionGif} alt="Instruction" className="logo-image" />
-        </div>
-
-        <p className="description-text">
-          <span
+      {/* オーバーレイ画像 - isVisibleがtrueの時のみ表示 */}
+      {isVisible && (
+        <img
+          src={initialscreenOverlay}
+          alt="Overlay"
+          className="initial-screen-overlay"
+        />
+      )}
+      {/* メインコンテンツ - isVisibleがtrueの時のみ表示 */}
+      {isVisible && (
+        <div className="main-content">
+          <div
+            className="logo-container"
             style={{
-              fontSize: "4rem",
-              fontFamily: '"Noto Serif JP", serif',
-              lineHeight: "0.5rem",
-              position: "relative",
-              top: "0.15em",
-            }}
-          >
-            パ
-          </span>
-          フォーマンス中、
-          <br />
-          場内には超音波信号が飛び交います。
-          <br />
-          信号を受信すると、この画面を開く
-          <br />
-          全てのスマホが一斉に変化します。
-        </p>
-
-        {/* 権限要求ボタン - instruction.gifの直下に配置 */}
-        {showPermissionRequest && onRequestPermissions && (
-          <button
-            className="permission-button-simple"
-            onClick={onRequestPermissions}
-            style={{
+              transform: `scale(${logoScale})`,
               opacity: logoOpacity,
             }}
           >
-            マイクとカメラのアクセスを許可
-          </button>
-        )}
+            <img
+              src={instructionGif}
+              alt="Instruction"
+              className="logo-image"
+            />
+          </div>
 
-        <div className="performer-text">
-          {/* <p>
+          <p className="description-text">
+            <span
+              style={{
+                fontSize: "4rem",
+                fontFamily: '"Noto Serif JP", serif',
+                lineHeight: "0.5rem",
+                position: "relative",
+                top: "0.15em",
+              }}
+            >
+              パ
+            </span>
+            フォーマンス中、
+            <br />
+            場内には超音波信号が飛び交います。
+            <br />
+            信号を受信すると、この画面を開く
+            <br />
+            全てのスマホが一斉に変化します。
+          </p>
+
+          {/* 権限要求ボタン - instruction.gifの直下に配置 */}
+          {showPermissionRequest && onRequestPermissions && (
+            <button
+              className="permission-button-simple"
+              onClick={onRequestPermissions}
+              style={{
+                opacity: logoOpacity,
+              }}
+            >
+              マイクとカメラのアクセスを許可
+            </button>
+          )}
+
+          <div className="performer-text">
+            {/* <p>
             Performer
             <br />
             ●: HTK ●: Carrot ●: Wagyu & JOJI
@@ -201,12 +314,13 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
             VJ / Development <br />
             Kanata Yamagishi
           </p> */}
-          <p>11.22.2025 at Sakabito</p>
+            <p>11.22.2025 at Sakabito</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* エラーメッセージの表示 - 画面下部に配置 */}
-      {showPermissionRequest && errorMessage && (
+      {/* エラーメッセージの表示 - 画面下部に配置（isVisibleがtrueの時のみ表示） */}
+      {isVisible && showPermissionRequest && errorMessage && (
         <div
           className="permission-error-ui"
           style={{
@@ -340,7 +454,7 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
         </div>
       )}
 
-      {/* PWAインストール促進UI */}
+      {/* PWAインストール促進UI（自動プロンプト） */}
       {showInstallPrompt && !isInstalled && (
         <div className="install-ui">
           <div className="install-header">
@@ -356,13 +470,62 @@ export const InitialScreen: React.FC<InitialScreenProps> = ({
             </button>
             <button
               className="dismiss-button"
-              onClick={() => setShowInstallPrompt(false)}
+              onClick={() => {
+                setShowInstallPrompt(false);
+                setShowManualInstallGuide(true); // 手動案内を表示
+              }}
             >
               後で
             </button>
           </div>
         </div>
       )}
+
+      {/* 手動インストール案内UI（beforeinstallpromptが発火しない場合） */}
+      {/* deferredPromptがある場合は自動プロンプトを優先するため、手動案内は非表示 */}
+      {showManualInstallGuide &&
+        !isInstalled &&
+        !showInstallPrompt &&
+        !deferredPrompt && (
+          <div className="install-ui">
+            <div className="install-header">
+              <div className="install-icon">📱</div>
+              <div className="install-content">
+                <h3>アプリをインストール</h3>
+                <p style={{fontSize: "13px", lineHeight: "1.6"}}>
+                  {/iPhone|iPad|iPod/.test(navigator.userAgent) ? (
+                    <>
+                      Safariのメニューから
+                      <br />
+                      「ホーム画面に追加」を選択してください
+                    </>
+                  ) : /Android/.test(navigator.userAgent) ? (
+                    <>
+                      ブラウザのメニューから
+                      <br />
+                      「ホーム画面に追加」を選択してください
+                    </>
+                  ) : (
+                    <>
+                      ブラウザのメニューから
+                      <br />
+                      「インストール」または「アプリとしてインストール」を選択してください
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="install-buttons">
+              <button
+                className="dismiss-button"
+                onClick={() => setShowManualInstallGuide(false)}
+                style={{width: "100%"}}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

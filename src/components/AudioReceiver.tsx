@@ -12,11 +12,20 @@ const CONFIG = {
   SMOOTHING: 0.8, // スムージング係数
 };
 
+export interface ChannelInfo {
+  channel: number;
+  targetFrequency: number; // 監視対象の周波数
+  binIndex: number; // 計算されたビンインデックス
+  actualFrequency: number; // ビンインデックスから逆算した実際の周波数
+  intensity: number;
+}
+
 export interface AudioAnalysisDiagnostics {
   audioContextState: string | null;
   sampleRate: number | null;
   fftSize: number | null;
   channelIntensities: number[]; // 16チャンネルの強度
+  channelInfos: ChannelInfo[]; // 各チャンネルの詳細情報
   detectedChannel: number | null;
   maxIntensity: number;
   detectionThreshold: number;
@@ -27,6 +36,7 @@ export interface AudioAnalysisDiagnostics {
   filterGain: number | null;
   bufferLength: number | null;
   overallMaxIntensity: number;
+  frequencyResolution: number | null; // 周波数分解能 (Hz/bin)
 }
 
 interface AudioReceiverProps {
@@ -69,6 +79,7 @@ export function AudioReceiver({
     sampleRate: null,
     fftSize: null,
     channelIntensities: Array(16).fill(0),
+    channelInfos: [],
     detectedChannel: null,
     maxIntensity: 0,
     detectionThreshold: CONFIG.DETECTION_THRESHOLD,
@@ -79,6 +90,7 @@ export function AudioReceiver({
     filterGain: null,
     bufferLength: null,
     overallMaxIntensity: 0,
+    frequencyResolution: null,
   });
 
   // マイクアクセス要求
@@ -147,11 +159,20 @@ export function AudioReceiver({
   const updateDiagnostics = () => {
     if (!onDiagnosticsChange) return;
 
+    const sampleRate = audioContextRef.current?.sampleRate || null;
+    const fftSize = analyserRef.current?.fftSize || null;
+    const bufferLength = analyserRef.current?.frequencyBinCount || null;
+
+    // 周波数分解能を計算: sampleRate / fftSize
+    const frequencyResolution =
+      sampleRate && fftSize ? sampleRate / fftSize : null;
+
     const diagnostics: AudioAnalysisDiagnostics = {
       audioContextState: audioContextRef.current?.state || null,
-      sampleRate: audioContextRef.current?.sampleRate || null,
-      fftSize: analyserRef.current?.fftSize || null,
+      sampleRate,
+      fftSize,
       channelIntensities: diagnosticsRef.current.channelIntensities,
+      channelInfos: diagnosticsRef.current.channelInfos,
       detectedChannel: diagnosticsRef.current.detectedChannel,
       maxIntensity: diagnosticsRef.current.maxIntensity,
       detectionThreshold: CONFIG.DETECTION_THRESHOLD,
@@ -160,8 +181,9 @@ export function AudioReceiver({
       isDetectionLoopRunning: detectionIntervalRef.current !== null,
       filterFrequency: filterRef.current?.frequency.value || null,
       filterGain: filterRef.current?.gain.value || null,
-      bufferLength: analyserRef.current?.frequencyBinCount || null,
+      bufferLength,
       overallMaxIntensity: diagnosticsRef.current.overallMaxIntensity,
+      frequencyResolution,
     };
 
     diagnosticsRef.current = diagnostics;
@@ -207,11 +229,19 @@ export function AudioReceiver({
         // );
       }
 
+      // 実際のサンプリングレートとFFTサイズを取得
+      const actualSampleRate =
+        audioContextRef.current?.sampleRate || CONFIG.SAMPLE_RATE;
+      const actualFftSize = analyserRef.current?.fftSize || CONFIG.FFT_SIZE;
+      const frequencyResolution = actualSampleRate / actualFftSize;
+
       // 各チャンネルの強度をチェック
+      const channelInfos: ChannelInfo[] = [];
       for (let channel = 0; channel < CONFIG.NUM_CHANNELS; channel++) {
-        const frequency = getFrequencyForChannel(channel);
+        const targetFrequency = getFrequencyForChannel(channel);
+        // 実際のサンプリングレートとFFTサイズを使用してビンインデックスを計算
         const binIndex = Math.round(
-          (frequency * CONFIG.FFT_SIZE) / CONFIG.SAMPLE_RATE
+          (targetFrequency * actualFftSize) / actualSampleRate
         );
 
         if (binIndex < bufferLength) {
@@ -226,6 +256,17 @@ export function AudioReceiver({
           intensity = intensity / (range * 2 + 1) / 255.0;
           channelIntensities[channel] = intensity;
 
+          // ビンインデックスから実際の周波数を逆算
+          const actualFrequency = binIndex * frequencyResolution;
+
+          channelInfos.push({
+            channel,
+            targetFrequency,
+            binIndex,
+            actualFrequency,
+            intensity,
+          });
+
           if (
             intensity >= CONFIG.DETECTION_THRESHOLD &&
             intensity > maxIntensity
@@ -233,11 +274,21 @@ export function AudioReceiver({
             maxIntensity = intensity;
             detectedChannel = channel;
           }
+        } else {
+          // ビンインデックスが範囲外の場合
+          channelInfos.push({
+            channel,
+            targetFrequency,
+            binIndex,
+            actualFrequency: binIndex * frequencyResolution,
+            intensity: 0,
+          });
         }
       }
 
       // 診断情報を更新
       diagnosticsRef.current.channelIntensities = channelIntensities;
+      diagnosticsRef.current.channelInfos = channelInfos;
       diagnosticsRef.current.detectedChannel =
         detectedChannel !== -1 ? detectedChannel : null;
       diagnosticsRef.current.maxIntensity = maxIntensity;

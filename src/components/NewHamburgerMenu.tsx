@@ -536,6 +536,16 @@ export const NewHamburgerMenu = forwardRef<
                       {audioDiagnostics.bufferLength || "N/A"}
                     </div>
 
+                    {/* Frequency Resolution */}
+                    <div style={{marginBottom: "10px"}}>
+                      <strong>Frequency Resolution:</strong>{" "}
+                      {audioDiagnostics.frequencyResolution
+                        ? `${audioDiagnostics.frequencyResolution.toFixed(
+                            2
+                          )} Hz/bin`
+                        : "N/A"}
+                    </div>
+
                     {/* Detection Loop Status */}
                     <div style={{marginBottom: "10px"}}>
                       <strong>Detection Loop:</strong>{" "}
@@ -613,66 +623,160 @@ export const NewHamburgerMenu = forwardRef<
                       {audioDiagnostics.overallMaxIntensity.toFixed(3)}
                     </div>
 
-                    {/* Channel Intensities */}
+                    {/* Channel Intensities with Frequency Info */}
                     <div style={{marginBottom: "10px"}}>
-                      <strong>Channel Intensities:</strong>
+                      <strong>Channel Intensities & Frequencies:</strong>
                       <div
                         style={{
                           marginTop: "5px",
                           display: "grid",
-                          gridTemplateColumns: "repeat(4, 1fr)",
+                          gridTemplateColumns: "repeat(2, 1fr)",
                           gap: "5px",
-                          fontSize: "11px",
+                          fontSize: "10px",
+                          maxHeight: "200px",
+                          overflowY: "auto",
                         }}
                       >
-                        {audioDiagnostics.channelIntensities.map(
-                          (intensity, index) => (
-                            <div
-                              key={index}
-                              style={{
-                                padding: "4px",
-                                backgroundColor:
-                                  intensity >=
-                                  audioDiagnostics.detectionThreshold
-                                    ? "rgba(40, 167, 69, 0.3)"
-                                    : "rgba(255, 255, 255, 0.05)",
-                                borderRadius: "4px",
-                                border:
-                                  intensity >=
-                                  audioDiagnostics.detectionThreshold
-                                    ? "1px solid #28a745"
-                                    : "1px solid rgba(255, 255, 255, 0.1)",
-                              }}
-                            >
-                              <div>
-                                Ch{index}: {intensity.toFixed(3)}
-                              </div>
-                              <div
-                                style={{
-                                  width: "100%",
-                                  height: "4px",
-                                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                                  borderRadius: "2px",
-                                  marginTop: "2px",
-                                  overflow: "hidden",
-                                }}
-                              >
+                        {audioDiagnostics.channelInfos &&
+                        audioDiagnostics.channelInfos.length > 0
+                          ? audioDiagnostics.channelInfos.map((info) => {
+                              const freqDiff = Math.abs(
+                                info.targetFrequency - info.actualFrequency
+                              );
+                              const hasError = freqDiff > 5; // 5Hz以上の誤差がある場合
+
+                              return (
                                 <div
+                                  key={info.channel}
                                   style={{
-                                    width: `${Math.min(intensity * 100, 100)}%`,
-                                    height: "100%",
+                                    padding: "6px",
+                                    backgroundColor:
+                                      info.intensity >=
+                                      audioDiagnostics.detectionThreshold
+                                        ? "rgba(40, 167, 69, 0.3)"
+                                        : "rgba(255, 255, 255, 0.05)",
+                                    borderRadius: "4px",
+                                    border:
+                                      info.intensity >=
+                                      audioDiagnostics.detectionThreshold
+                                        ? "1px solid #28a745"
+                                        : hasError
+                                        ? "1px solid #ffc107"
+                                        : "1px solid rgba(255, 255, 255, 0.1)",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: "bold",
+                                      marginBottom: "2px",
+                                    }}
+                                  >
+                                    Ch{info.channel}:{" "}
+                                    {info.intensity.toFixed(3)}
+                                  </div>
+                                  <div style={{fontSize: "9px", opacity: 0.8}}>
+                                    Target: {info.targetFrequency.toFixed(0)}Hz
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "9px",
+                                      opacity: 0.8,
+                                      color: hasError ? "#ffc107" : "inherit",
+                                    }}
+                                  >
+                                    Actual: {info.actualFrequency.toFixed(0)}Hz
+                                    {hasError && (
+                                      <span style={{color: "#ffc107"}}>
+                                        {" "}
+                                        (⚠️ {freqDiff.toFixed(0)}Hz diff)
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{fontSize: "9px", opacity: 0.7}}>
+                                    Bin: {info.binIndex}
+                                  </div>
+                                  <div
+                                    style={{
+                                      width: "100%",
+                                      height: "4px",
+                                      backgroundColor:
+                                        "rgba(255, 255, 255, 0.1)",
+                                      borderRadius: "2px",
+                                      marginTop: "4px",
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        width: `${Math.min(
+                                          info.intensity * 100,
+                                          100
+                                        )}%`,
+                                        height: "100%",
+                                        backgroundColor:
+                                          info.intensity >=
+                                          audioDiagnostics.detectionThreshold
+                                            ? "#28a745"
+                                            : "#007AFF",
+                                        transition: "width 0.1s ease",
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })
+                          : audioDiagnostics.channelIntensities.map(
+                              (intensity, index) => (
+                                <div
+                                  key={index}
+                                  style={{
+                                    padding: "4px",
                                     backgroundColor:
                                       intensity >=
                                       audioDiagnostics.detectionThreshold
-                                        ? "#28a745"
-                                        : "#007AFF",
-                                    transition: "width 0.1s ease",
+                                        ? "rgba(40, 167, 69, 0.3)"
+                                        : "rgba(255, 255, 255, 0.05)",
+                                    borderRadius: "4px",
+                                    border:
+                                      intensity >=
+                                      audioDiagnostics.detectionThreshold
+                                        ? "1px solid #28a745"
+                                        : "1px solid rgba(255, 255, 255, 0.1)",
                                   }}
-                                />
-                              </div>
-                            </div>
-                          )
-                        )}
+                                >
+                                  <div>
+                                    Ch{index}: {intensity.toFixed(3)}
+                                  </div>
+                                  <div
+                                    style={{
+                                      width: "100%",
+                                      height: "4px",
+                                      backgroundColor:
+                                        "rgba(255, 255, 255, 0.1)",
+                                      borderRadius: "2px",
+                                      marginTop: "2px",
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        width: `${Math.min(
+                                          intensity * 100,
+                                          100
+                                        )}%`,
+                                        height: "100%",
+                                        backgroundColor:
+                                          intensity >=
+                                          audioDiagnostics.detectionThreshold
+                                            ? "#28a745"
+                                            : "#007AFF",
+                                        transition: "width 0.1s ease",
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            )}
                       </div>
                     </div>
                   </>

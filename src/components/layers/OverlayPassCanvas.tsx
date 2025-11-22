@@ -50,6 +50,11 @@ const getOverlayEffectDefinition = (
   effectSignal: number,
   playerSignal?: string
 ): OverlayEffectDefinition => {
+  // 信号12は全エフェクト無効化
+  if (effectSignal === 12) {
+    return {type: "none"};
+  }
+
   if (playerSignal === undefined) {
     return {type: "none"};
   }

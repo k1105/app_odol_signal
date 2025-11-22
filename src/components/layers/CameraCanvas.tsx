@@ -68,6 +68,11 @@ const getEffectDefinition = (
   effectSignal: number,
   playerSignal?: string
 ): EffectDefinition => {
+  // 信号12は全エフェクト無効化
+  if (effectSignal === 12) {
+    return {type: "normal"};
+  }
+
   // playerSignalが未設定の場合は何も表示しない
   if (playerSignal === undefined) {
     return {type: "normal"};

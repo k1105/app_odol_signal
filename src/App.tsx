@@ -138,6 +138,15 @@ function FullCameraApp() {
       }
     }
 
+    // 信号12は全エフェクト無効化
+    if (effectId === 12) {
+      setOverlayEffectSignal(-1);
+      setCameraEffectSignal(-1);
+      setTransientEffectSignal(-1);
+      setCurrentPlayerSignal(undefined);
+      return;
+    }
+
     // 信号9-11はplayerSignal（オーバーレイ切り替え）
     // 数値を文字列にマッピング: 9="BLUE", 10="YELLOW", 11="RED"
     if (effectId >= 9 && effectId <= 11) {

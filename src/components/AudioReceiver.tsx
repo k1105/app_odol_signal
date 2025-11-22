@@ -308,9 +308,11 @@ export function AudioReceiver({
 
         // 利用可能なエフェクトの範囲内かチェック
         // 信号9-11は特別な信号として常に処理する
+        // 信号12は全エフェクト無効化として常に処理する
         if (
           detectedChannel < availableEffects ||
-          (detectedChannel >= 9 && detectedChannel <= 11)
+          (detectedChannel >= 9 && detectedChannel <= 11) ||
+          detectedChannel === 12
         ) {
           console.log(`AudioReceiver: エフェクト ${detectedChannel} を実行`);
           onEffectDetected(detectedChannel);

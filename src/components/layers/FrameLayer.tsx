@@ -1,4 +1,4 @@
-import {useEffect, useRef, useMemo} from "react";
+import {useEffect, useRef, useMemo, useState} from "react";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {sizeCanvasToDisplay} from "../../utils/canvasSizing";
 
@@ -22,6 +22,11 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
   const lastClearFrameRef = useRef<number>(0);
   const positionBufferRef = useRef<WebGLBuffer | null>(null);
 
+  // アニメーション用のopacity状態
+  const [opacity, setOpacity] = useState(0);
+  // アニメーション完了後に描画を停止するためのフラグ
+  const shouldRenderRef = useRef(false);
+
   // プレイヤーシグナルに応じた色を決定
   const playerColor = useMemo<[number, number, number]>(() => {
     if (currentPlayerSignal === "BLUE")
@@ -30,6 +35,29 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
       return [255 / 255, 255 / 255, 0 / 255]; // 黄
     if (currentPlayerSignal === "RED") return [255 / 255, 0 / 255, 0 / 255]; // 赤
     return [1.0, 1.0, 1.0]; // 白（表示しない）
+  }, [currentPlayerSignal]);
+
+  // currentPlayerSignalの変化に応じてopacityをアニメーション
+  useEffect(() => {
+    if (currentPlayerSignal) {
+      // イースイン: 表示される時
+      // shouldRenderを先にtrueにしてから、opacityを1に設定
+      shouldRenderRef.current = true;
+      // 次のフレームでopacityを1に設定（アニメーション開始）
+      const rafId = requestAnimationFrame(() => {
+        setOpacity(1);
+      });
+      return () => cancelAnimationFrame(rafId);
+    } else {
+      // イースアウト: 非表示になる時
+      // opacityを0に設定してから、アニメーション完了後にshouldRenderをfalseにする
+      setOpacity(0);
+      // アニメーション完了（0.3秒）後に描画を停止
+      const timer = setTimeout(() => {
+        shouldRenderRef.current = false;
+      }, 300); // 0.3秒 = 300ms
+      return () => clearTimeout(timer);
+    }
   }, [currentPlayerSignal]);
 
   // WebGL初期化
@@ -99,15 +127,24 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
       if (!glRef.current || !canvasRef.current) return;
       sizeCanvasToDisplay(canvasRef.current, glRef.current);
       // リサイズ時に円を再生成
-      generateCircles(canvasRef.current.width, canvasRef.current.height);
+      if (shouldRenderRef.current && currentPlayerSignal) {
+        generateCircles(canvasRef.current.width, canvasRef.current.height);
+      }
     };
     window.addEventListener("resize", onResize);
 
-    if (!currentPlayerSignal) {
+    // shouldRenderがfalseの時は描画を停止
+    // アニメーション中（shouldRenderがtrue）は描画を続ける
+    if (!shouldRenderRef.current) {
       // プレイヤーシグナルがない場合は透明でクリア
       gl.clearColor(0.0, 0.0, 0.0, 0.0); // 透明でクリア
       gl.clear(gl.COLOR_BUFFER_BIT);
+      // 円をクリア
+      circlesRef.current = [];
+      frameCountRef.current = 0;
+      lastClearFrameRef.current = 0;
       return () => {
+        cancelAnimationFrame(rafRef.current);
         window.removeEventListener("resize", onResize);
       };
     }
@@ -125,6 +162,11 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
         new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
         gl.STATIC_DRAW
       );
+    }
+
+    // currentPlayerSignalが値を持つようになった時、円を初期化
+    if (circlesRef.current.length === 0) {
+      generateCircles(canvas.width, canvas.height);
     }
 
     const draw = () => {
@@ -265,6 +307,7 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
           width: "100%",
           height: "100%",
           objectFit: "contain",
+          opacity: opacity,
           transition: "opacity 0.3s ease-in-out",
         }}
         onError={(e) => {
@@ -274,19 +317,19 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
       />
 
       {/* プレイヤー名エフェクト（WebGL） */}
-      {currentPlayerSignal && (
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            // WebGLのblend modeでmultiplyを実装しているため、CSSのmixBlendModeは不要
-          }}
-        />
-      )}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          opacity: opacity,
+          transition: "opacity 0.3s ease-in-out",
+          // WebGLのblend modeでmultiplyを実装しているため、CSSのmixBlendModeは不要
+        }}
+      />
     </div>
   );
 };

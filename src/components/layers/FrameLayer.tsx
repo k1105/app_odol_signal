@@ -300,15 +300,13 @@ export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
         justifyContent: "center",
       }}
     >
-      {/* ベースフレーム */}
+      {/* ベースフレーム - 常に表示 */}
       <img
         src={imagePath}
         style={{
           width: "100%",
           height: "100%",
           objectFit: "contain",
-          opacity: opacity,
-          transition: "opacity 0.3s ease-in-out",
         }}
         onError={(e) => {
           console.error(`Failed to load image: ${imagePath}`);

@@ -69,7 +69,7 @@
     "playerSignal": "YELLOW",
     "effectSignal": 0,
     "effect": {
-      "type": "normal"
+      "type": "dan"
     }
   },
   {
@@ -113,7 +113,7 @@
     "playerSignal": "YELLOW",
     "effectSignal": 6,
     "effect": {
-      "type": "mosaic"
+      "type": "yellowStar"
     }
   },
   {

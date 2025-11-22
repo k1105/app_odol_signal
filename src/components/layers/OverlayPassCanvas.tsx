@@ -22,6 +22,7 @@ import {
   uploadNoiseGridTexture,
   type NoiseGridResources,
 } from "../../utils/noiseGridConfig";
+import {applyDanShader, defaultDanConfig} from "../../utils/danShader";
 import indexInformation from "../../../public/index_information.json";
 
 /* ============================= Types & Config ============================= */
@@ -39,6 +40,7 @@ type OverlayEffectKind =
   | "snakePath"
   | "noiseGrid"
   | "tenichi"
+  | "dan"
   | "none";
 
 interface OverlayEffectDefinition {
@@ -79,7 +81,8 @@ const getOverlayEffectDefinition = (
     effect.type === "typography" ||
     effect.type === "snakePath" ||
     effect.type === "noiseGrid" ||
-    effect.type === "tenichi"
+    effect.type === "tenichi" ||
+    effect.type === "dan"
   ) {
     return {type: effect.type as OverlayEffectKind};
   }
@@ -107,6 +110,11 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
 
   // Programs
   const baseProgramRef = useRef<WebGLProgram | null>(null);
+  const danProgramRef = useRef<WebGLProgram | null>(null);
+
+  // Dan texture
+  const danTexRef = useRef<WebGLTexture | null>(null);
+  const danImageRef = useRef<HTMLImageElement | null>(null);
 
   // RAF
   const rafRef = useRef<number>(0);
@@ -135,6 +143,7 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
     }
     glRef.current = result.gl;
     baseProgramRef.current = result.programs.program;
+    danProgramRef.current = result.programs.danProgram;
     return true;
   };
 
@@ -210,6 +219,39 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
     }
   }, [ready, effectDef.type]);
 
+  // Dan 画像のロード
+  useEffect(() => {
+    if (!ready || !glRef.current) return;
+    if (effectDef.type === "dan" && !danImageRef.current) {
+      const img = new Image();
+      img.onload = () => {
+        const gl = glRef.current;
+        if (!gl) return;
+
+        const texture = gl.createTexture();
+        if (!texture) return;
+
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          img
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        danTexRef.current = texture;
+        danImageRef.current = img;
+      };
+      img.src = "/assets/dan-text.png";
+    }
+  }, [ready, effectDef.type]);
+
   /* ------------------------------- Draw loop -------------------------------- */
 
   useEffect(() => {
@@ -220,7 +262,7 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
     const gl = glRef.current!;
     const canvas = canvasRef.current!;
 
-    const draw = () => {
+    const draw = (t: number) => {
       try {
         // DPR/リサイズ
         sizeCanvasToDisplay(canvas, gl);
@@ -281,6 +323,42 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
           gl.disable(gl.BLEND);
         }
 
+        // Dan オーバーレイ
+        if (
+          effectDef.type === "dan" &&
+          danProgramRef.current &&
+          danTexRef.current &&
+          danImageRef.current
+        ) {
+          const danNaturalW =
+            danImageRef.current.naturalWidth || danImageRef.current.width;
+          const danNaturalH =
+            danImageRef.current.naturalHeight || danImageRef.current.height;
+
+          applyDanShader({
+            gl,
+            program: danProgramRef.current,
+            time: (t % 10000) * 0.001,
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            danTexture: danTexRef.current,
+            danImageWidth: danNaturalW,
+            danImageHeight: danNaturalH,
+            config: defaultDanConfig,
+          });
+
+          // ブレンド有効化
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          drawQuad(
+            gl,
+            danProgramRef.current,
+            IDENTITY3 as unknown as number[],
+            danTexRef.current
+          );
+          gl.disable(gl.BLEND);
+        }
+
         rafRef.current = requestAnimationFrame(draw);
       } catch {
         rafRef.current = requestAnimationFrame(draw);
@@ -318,9 +396,13 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
         glRef.current.deleteTexture(snakePathResourcesRef.current.texture);
       if (glRef.current && noiseGridResourcesRef.current?.texture)
         glRef.current.deleteTexture(noiseGridResourcesRef.current.texture);
+      if (glRef.current && danTexRef.current)
+        glRef.current.deleteTexture(danTexRef.current);
       typoResourcesRef.current = null;
       snakePathResourcesRef.current = null;
       noiseGridResourcesRef.current = null;
+      danTexRef.current = null;
+      danImageRef.current = null;
     };
   }, []);
 

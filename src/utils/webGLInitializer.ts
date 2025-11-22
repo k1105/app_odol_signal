@@ -26,6 +26,11 @@ import {
   playerNameVertexShader,
   playerNameFragmentShader,
 } from "./playerNameShader";
+import {danVertexShader, danFragmentShader} from "./danShader";
+import {
+  yellowStarVertexShader,
+  yellowStarFragmentShader,
+} from "./yellowStarShader";
 
 export interface WebGLPrograms {
   program: WebGLProgram | null;
@@ -39,6 +44,8 @@ export interface WebGLPrograms {
   noiseGridProgram: WebGLProgram | null;
   sphereProgram: WebGLProgram | null;
   playerNameProgram: WebGLProgram | null;
+  danProgram: WebGLProgram | null;
+  yellowStarProgram: WebGLProgram | null;
 }
 
 // WebGL初期化
@@ -65,6 +72,8 @@ export const initWebGL = (
           noiseGridProgram: null,
           sphereProgram: null,
           playerNameProgram: null,
+          danProgram: null,
+          yellowStarProgram: null,
         },
       };
     }
@@ -171,6 +180,26 @@ export const initWebGL = (
       gl.FRAGMENT_SHADER,
       playerNameFragmentShader
     );
+    const danVertexShaderObj = createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      danVertexShader
+    );
+    const danFragmentShaderObj = createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      danFragmentShader
+    );
+    const yellowStarVertexShaderObj = createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      yellowStarVertexShader
+    );
+    const yellowStarFragmentShaderObj = createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      yellowStarFragmentShader
+    );
 
     if (
       !vertexShader ||
@@ -193,7 +222,11 @@ export const initWebGL = (
       !sphereVertexShaderObj ||
       !sphereFragmentShaderObj ||
       !playerNameVertexShaderObj ||
-      !playerNameFragmentShaderObj
+      !playerNameFragmentShaderObj ||
+      !danVertexShaderObj ||
+      !danFragmentShaderObj ||
+      !yellowStarVertexShaderObj ||
+      !yellowStarFragmentShaderObj
     ) {
       console.error("Shader creation failed");
       return {
@@ -210,6 +243,8 @@ export const initWebGL = (
           noiseGridProgram: null,
           sphereProgram: null,
           playerNameProgram: null,
+          danProgram: null,
+          yellowStarProgram: null,
         },
       };
     }
@@ -262,6 +297,16 @@ export const initWebGL = (
       playerNameVertexShaderObj,
       playerNameFragmentShaderObj
     );
+    const danProgram = createProgram(
+      gl,
+      danVertexShaderObj,
+      danFragmentShaderObj
+    );
+    const yellowStarProgram = createProgram(
+      gl,
+      yellowStarVertexShaderObj,
+      yellowStarFragmentShaderObj
+    );
 
     if (
       !program ||
@@ -274,7 +319,9 @@ export const initWebGL = (
       !rotatingGridProgram ||
       !noiseGridProgram ||
       !sphereProgram ||
-      !playerNameProgram
+      !playerNameProgram ||
+      !danProgram ||
+      !yellowStarProgram
     ) {
       console.error("Program creation failed");
       return {
@@ -291,6 +338,8 @@ export const initWebGL = (
           noiseGridProgram: null,
           sphereProgram: null,
           playerNameProgram: null,
+          danProgram: null,
+          yellowStarProgram: null,
         },
       };
     }
@@ -313,6 +362,8 @@ export const initWebGL = (
         noiseGridProgram,
         sphereProgram,
         playerNameProgram,
+        danProgram,
+        yellowStarProgram,
       },
     };
   } catch (error) {
@@ -331,6 +382,8 @@ export const initWebGL = (
         noiseGridProgram: null,
         sphereProgram: null,
         playerNameProgram: null,
+        danProgram: null,
+        yellowStarProgram: null,
       },
     };
   }

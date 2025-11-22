@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useRef} from "react";
 import {getSparkleConfigForEffect} from "../../utils/sparkleConfig";
 import {applySparkleShader} from "../../utils/sparkleShader";
+import {applyYellowStarShader, defaultYellowStarConfig} from "../../utils/yellowStarShader";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {sizeCanvasToDisplay} from "../../utils/canvasSizing";
@@ -15,7 +16,7 @@ export interface TransientEffectsCanvasProps {
   style?: React.CSSProperties;
 }
 
-type TransientEffectKind = "sparkle" | "none";
+type TransientEffectKind = "sparkle" | "yellowStar" | "none";
 
 interface TransientEffectDefinition {
   type: TransientEffectKind;
@@ -50,9 +51,12 @@ const getTransientEffectDefinition = (
   }
 
   const effect = songInfo.effect as JsonEffectDefinition;
-  // sparkle のみフィルタリング
+  // sparkle と yellowStar をフィルタリング
   if (effect.type === "sparkle") {
     return {type: "sparkle"};
+  }
+  if (effect.type === "yellowStar") {
+    return {type: "yellowStar"};
   }
 
   return {type: "none"};
@@ -72,10 +76,15 @@ export const TransientEffectsCanvas: React.FC<
 
   // Programs
   const sparkleProgramRef = useRef<WebGLProgram | null>(null);
+  const yellowStarProgramRef = useRef<WebGLProgram | null>(null);
 
   // Sparkle texture
   const starTexRef = useRef<WebGLTexture | null>(null);
   const starImageRef = useRef<HTMLImageElement | null>(null);
+
+  // Yellow Star texture
+  const yellowStarTexRef = useRef<WebGLTexture | null>(null);
+  const yellowStarImageRef = useRef<HTMLImageElement | null>(null);
 
   // RAF
   const rafRef = useRef<number>(0);
@@ -95,6 +104,7 @@ export const TransientEffectsCanvas: React.FC<
     }
     glRef.current = result.gl;
     sparkleProgramRef.current = result.programs.sparkleProgram;
+    yellowStarProgramRef.current = result.programs.yellowStarProgram;
     return true;
   };
 
@@ -152,6 +162,39 @@ export const TransientEffectsCanvas: React.FC<
     }
   }, [ready, effectDef.type]);
 
+  // Yellow Star 画像のロード
+  useEffect(() => {
+    if (!ready || !glRef.current) return;
+    if (effectDef.type === "yellowStar" && !yellowStarImageRef.current) {
+      const img = new Image();
+      img.onload = () => {
+        const gl = glRef.current;
+        if (!gl) return;
+
+        const texture = gl.createTexture();
+        if (!texture) return;
+
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          img
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        yellowStarTexRef.current = texture;
+        yellowStarImageRef.current = img;
+      };
+      img.src = "/assets/yellow_star.png";
+    }
+  }, [ready, effectDef.type]);
+
   /* ------------------------------- Draw loop -------------------------------- */
 
   useEffect(() => {
@@ -205,6 +248,42 @@ export const TransientEffectsCanvas: React.FC<
           gl.disable(gl.BLEND);
         }
 
+        // Yellow Star エフェクト
+        if (
+          effectDef.type === "yellowStar" &&
+          yellowStarProgramRef.current &&
+          yellowStarTexRef.current &&
+          yellowStarImageRef.current
+        ) {
+          const yellowStarNaturalW =
+            yellowStarImageRef.current.naturalWidth || yellowStarImageRef.current.width;
+          const yellowStarNaturalH =
+            yellowStarImageRef.current.naturalHeight || yellowStarImageRef.current.height;
+
+          applyYellowStarShader({
+            gl,
+            program: yellowStarProgramRef.current,
+            time: (t % 10000) * 0.001,
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
+            yellowStarTexture: yellowStarTexRef.current,
+            yellowStarImageWidth: yellowStarNaturalW,
+            yellowStarImageHeight: yellowStarNaturalH,
+            config: defaultYellowStarConfig,
+          });
+
+          // ブレンド有効化
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          drawQuad(
+            gl,
+            yellowStarProgramRef.current,
+            IDENTITY3 as unknown as number[],
+            yellowStarTexRef.current
+          );
+          gl.disable(gl.BLEND);
+        }
+
         rafRef.current = requestAnimationFrame(draw);
       } catch {
         rafRef.current = requestAnimationFrame(draw);
@@ -221,8 +300,12 @@ export const TransientEffectsCanvas: React.FC<
     return () => {
       if (glRef.current && starTexRef.current)
         glRef.current.deleteTexture(starTexRef.current);
+      if (glRef.current && yellowStarTexRef.current)
+        glRef.current.deleteTexture(yellowStarTexRef.current);
       starTexRef.current = null;
       starImageRef.current = null;
+      yellowStarTexRef.current = null;
+      yellowStarImageRef.current = null;
     };
   }, []);
 

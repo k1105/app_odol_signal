@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useImperativeHandle, forwardRef} from "react";
 
 export type LayoutMode =
   | "OnPerformance"
@@ -12,66 +12,102 @@ export interface SignalLogEntry {
 }
 
 export interface NewHamburgerMenuProps {
-  // Current State
+  // Current State (読み取り専用)
   currentState: string;
   currentIndex: number;
-
-  // Signal Log
-  signalLog: SignalLogEntry[];
-
-  // Audio Level
   audioLevel?: number; // 音声入力レベル (0-1)
 
-  // Signal Simulator
+  // Signal Simulator - 実際の処理を実行するコールバック
   onBeginSignal: () => void;
   onFinishSignal: () => void;
-  onIndexChange: (index: number) => void;
-  currentSimulatorIndex: number;
+  onEffectIndexChange: (index: number) => void;
 
-  // Countdown Timer
-  countdownDate: string;
-  countdownTime: string;
-  halfTime: number;
-  onDateChange: (date: string) => void;
-  onTimeChange: (time: string) => void;
-  onHalfTimeChange: (halfTime: number) => void;
+  // Countdown Timer - startTime更新用のコールバック
+  onStartTimeChange?: (startTime: number) => void;
 }
 
-export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
+export interface NewHamburgerMenuRef {
+  addSignalLog: (entry: SignalLogEntry) => void;
+}
+
+export const NewHamburgerMenu = forwardRef<NewHamburgerMenuRef, NewHamburgerMenuProps>(({
   currentState,
   currentIndex,
-  signalLog,
   audioLevel = 0,
   onBeginSignal,
   onFinishSignal,
-  onIndexChange,
-  currentSimulatorIndex,
-  countdownDate,
-  countdownTime,
-  halfTime,
-  onDateChange,
-  onTimeChange,
-  onHalfTimeChange,
-}) => {
+  onEffectIndexChange,
+  onStartTimeChange,
+}, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  // ローカル状態としてシミュレーター用のインデックスを管理
-  const [localSimulatorIndex, setLocalSimulatorIndex] = useState(
-    currentSimulatorIndex
-  );
+  
+  // Signal Log の内部管理
+  const [signalLog, setSignalLog] = useState<SignalLogEntry[]>([]);
+  
+  // Signal Simulator の内部管理
+  const [currentSimulatorIndex, setCurrentSimulatorIndex] = useState(0);
+  
+  // Countdown Timer の内部管理
+  const [countdownDate, setCountdownDate] = useState("2025-08-10");
+  const [countdownTime, setCountdownTime] = useState("00:00");
+  const [halfTime, setHalfTime] = useState(15);
 
-  // currentSimulatorIndexが変更されたときにローカル状態を更新
-  useEffect(() => {
-    setLocalSimulatorIndex(currentSimulatorIndex);
-  }, [currentSimulatorIndex]);
+  // 信号ログに追加（外部から呼び出し可能）
+  const addSignalLog = (entry: SignalLogEntry) => {
+    setSignalLog((prev) => [...prev, entry]);
+  };
+
+  // 外部から呼び出し可能な関数を公開
+  useImperativeHandle(ref, () => ({
+    addSignalLog,
+  }));
+
+  // BEGIN信号のハンドラー
+  const handleBeginSignal = () => {
+    if (currentState === "Countdown") return; // カウントダウン中は何もしない
+    const timestamp = new Date().toLocaleTimeString();
+    addSignalLog({timestamp, signal: "BEGIN"});
+    onBeginSignal();
+  };
+
+  // FINISH信号のハンドラー
+  const handleFinishSignal = () => {
+    if (currentState === "Countdown") return; // カウントダウン中は何もしない
+    const timestamp = new Date().toLocaleTimeString();
+    addSignalLog({timestamp, signal: "FINISH"});
+    onFinishSignal();
+  };
 
   // セレクトボックスの変更ハンドラー
   const handleIndexChange = (newIndex: number) => {
-    setLocalSimulatorIndex(newIndex);
+    setCurrentSimulatorIndex(newIndex);
   };
 
   // Sendボタンのハンドラー
   const handleSendIndex = () => {
-    onIndexChange(localSimulatorIndex);
+    if (currentState === "Countdown") return; // カウントダウン中は何もしない
+    onEffectIndexChange(currentSimulatorIndex);
+  };
+
+  // カウントダウンタイマーの変更ハンドラー
+  const handleDateChange = (date: string) => {
+    setCountdownDate(date);
+    if (onStartTimeChange) {
+      const newStartTime = new Date(`${date}T${countdownTime}:00`).getTime();
+      onStartTimeChange(newStartTime);
+    }
+  };
+
+  const handleTimeChange = (time: string) => {
+    setCountdownTime(time);
+    if (onStartTimeChange) {
+      const newStartTime = new Date(`${countdownDate}T${time}:00`).getTime();
+      onStartTimeChange(newStartTime);
+    }
+  };
+
+  const handleHalfTimeChange = (halfTime: number) => {
+    setHalfTime(halfTime);
   };
 
   const toggleMenu = () => {
@@ -326,7 +362,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
                 }}
               >
                 <button
-                  onClick={onBeginSignal}
+                  onClick={handleBeginSignal}
                   style={{
                     flex: 1,
                     padding: "12px",
@@ -349,7 +385,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
                   BEGIN
                 </button>
                 <button
-                  onClick={onFinishSignal}
+                  onClick={handleFinishSignal}
                   style={{
                     flex: 1,
                     padding: "12px",
@@ -391,7 +427,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
                   Index:
                 </label>
                 <select
-                  value={localSimulatorIndex}
+                  value={currentSimulatorIndex}
                   onChange={(e) => handleIndexChange(Number(e.target.value))}
                   style={{
                     flex: 1,
@@ -461,7 +497,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
                 <input
                   type="date"
                   value={countdownDate}
-                  onChange={(e) => onDateChange(e.target.value)}
+                  onChange={(e) => handleDateChange(e.target.value)}
                   style={{
                     flex: 1,
                     padding: "8px 12px",
@@ -492,7 +528,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
                 <input
                   type="time"
                   value={countdownTime}
-                  onChange={(e) => onTimeChange(e.target.value)}
+                  onChange={(e) => handleTimeChange(e.target.value)}
                   style={{
                     flex: 1,
                     padding: "8px 12px",
@@ -524,7 +560,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
                   type="number"
                   min="0"
                   value={halfTime}
-                  onChange={(e) => onHalfTimeChange(Number(e.target.value))}
+                  onChange={(e) => handleHalfTimeChange(Number(e.target.value))}
                   style={{
                     flex: 1,
                     padding: "8px 12px",
@@ -568,4 +604,6 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
       )}
     </>
   );
-};
+});
+
+NewHamburgerMenu.displayName = "NewHamburgerMenu";

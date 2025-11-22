@@ -3,7 +3,7 @@ import {AudioReceiver} from "./components/AudioReceiver";
 import {InitialScreen} from "./components/InitialScreen";
 import {
   NewHamburgerMenu,
-  type SignalLogEntry,
+  type NewHamburgerMenuRef,
 } from "./components/NewHamburgerMenu";
 type LayoutMode =
   | "NoSignal"
@@ -58,13 +58,9 @@ function FullCameraApp() {
   const beginFlagRef = useRef(false);
   const lastEffectIdRef = useRef<number>(-1); // 前回のエフェクトIDを追跡
 
-  // ハンバーガーメニュー用ステート
-  const [countdownDate, setCountdownDate] = useState("2025-08-10");
-  const [countdownTime, setCountdownTime] = useState("00:00");
-  const [halfTime, setHalfTime] = useState(15);
-  const [signalLog, setSignalLog] = useState<SignalLogEntry[]>([]);
-  const [currentSimulatorIndex, setCurrentSimulatorIndex] = useState(0);
+  // ハンバーガーメニュー用ステート（最小限のみ）
   const [audioLevel, setAudioLevel] = useState(0);
+  const hamburgerMenuRef = useRef<NewHamburgerMenuRef>(null);
 
   // 現在のアクティブなエフェクト信号を計算（オーバーレイ、カメラ、トランジエントのうち最大値を使用）
   const getCurrentEffectIndex = () => {
@@ -77,7 +73,7 @@ function FullCameraApp() {
   };
 
   const [startTime, setStartTime] = useState(
-    new Date(`${countdownDate}T${countdownTime}:00`).getTime()
+    new Date("2025-08-10T00:00:00").getTime()
   );
 
   // setInterval(() => {
@@ -120,12 +116,12 @@ function FullCameraApp() {
     if (isBeginingSongRef.current) return;
     if (layout === "Countdown") return; // カウントダウン中は何もしない
 
-    // 信号ログに記録
+    // 信号ログに記録（NewHamburgerMenu 内部で管理）
     const timestamp = new Date().toLocaleTimeString();
-    setSignalLog((prev) => [
-      ...prev,
-      {timestamp, signal: `Signal ${effectId}`},
-    ]);
+    hamburgerMenuRef.current?.addSignalLog({
+      timestamp,
+      signal: `Signal ${effectId}`,
+    });
 
     // 信号受信のたびに、前回のtransient信号から500ms以上経過しているかチェック
     const now = Date.now();
@@ -211,24 +207,16 @@ function FullCameraApp() {
     setIsNoSignalDetected(true);
   };
 
-  // ハンバーガーメニュー用の関数
-  const handleBeginSignal = () => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    const timestamp = new Date().toLocaleTimeString();
-    setSignalLog((prev) => [...prev, {timestamp, signal: "BEGIN"}]);
+  // ハンバーガーメニュー用の関数（最小限のコールバック）
+  const handleBeginSignalFromMenu = () => {
     onBeginSignal();
   };
 
-  const handleFinishSignal = () => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    const timestamp = new Date().toLocaleTimeString();
-    setSignalLog((prev) => [...prev, {timestamp, signal: "FINISH"}]);
+  const handleFinishSignalFromMenu = () => {
     onFinnishSignal();
   };
 
-  const handleSimulatorIndexChange = (index: number) => {
-    if (layout === "Countdown") return; // カウントダウン中は何もしない
-    setCurrentSimulatorIndex(index);
+  const handleEffectIndexChangeFromMenu = (index: number) => {
     // エフェクト信号を設定（0-9の範囲）
     if (index >= 0 && index <= 2) {
       setOverlayEffectSignal(index);
@@ -420,10 +408,7 @@ function FullCameraApp() {
     }
   }, [isNoSignalDetected, onNoSignal]);
 
-  // カウントダウンタイマーの更新
-  useEffect(() => {
-    setStartTime(new Date(`${countdownDate}T${countdownTime}:00`).getTime());
-  }, [countdownDate, countdownTime]);
+  // カウントダウンタイマーの更新は NewHamburgerMenu 内部で管理されるため削除
 
   // カウントダウン完了チェック（1秒ごと）
   useEffect(() => {
@@ -582,20 +567,14 @@ function FullCameraApp() {
 
         {/* ハンバーガーメニュー */}
         <NewHamburgerMenu
+          ref={hamburgerMenuRef}
           currentState={layout}
           currentIndex={getCurrentEffectIndex()}
-          signalLog={signalLog}
           audioLevel={audioLevel}
-          onBeginSignal={handleBeginSignal}
-          onFinishSignal={handleFinishSignal}
-          onIndexChange={handleSimulatorIndexChange}
-          currentSimulatorIndex={currentSimulatorIndex}
-          countdownDate={countdownDate}
-          countdownTime={countdownTime}
-          halfTime={halfTime}
-          onDateChange={setCountdownDate}
-          onTimeChange={setCountdownTime}
-          onHalfTimeChange={setHalfTime}
+          onBeginSignal={handleBeginSignalFromMenu}
+          onFinishSignal={handleFinishSignalFromMenu}
+          onEffectIndexChange={handleEffectIndexChangeFromMenu}
+          onStartTimeChange={setStartTime}
         />
       </>
     </>

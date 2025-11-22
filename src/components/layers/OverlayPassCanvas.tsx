@@ -34,7 +34,12 @@ export interface OverlayPassCanvasProps {
   onPointerDown?: () => void;
 }
 
-type OverlayEffectKind = "typography" | "snakePath" | "noiseGrid" | "none";
+type OverlayEffectKind =
+  | "typography"
+  | "snakePath"
+  | "noiseGrid"
+  | "tenichi"
+  | "none";
 
 interface OverlayEffectDefinition {
   type: OverlayEffectKind;
@@ -73,7 +78,8 @@ const getOverlayEffectDefinition = (
   if (
     effect.type === "typography" ||
     effect.type === "snakePath" ||
-    effect.type === "noiseGrid"
+    effect.type === "noiseGrid" ||
+    effect.type === "tenichi"
   ) {
     return {type: effect.type as OverlayEffectKind};
   }
@@ -135,6 +141,8 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
   /* --------------------------- Effects lifecycle --------------------------- */
 
   useEffect(() => {
+    // tenichiエフェクトの場合はCanvasを使わないのでスキップ
+    if (effectDef.type === "tenichi") return;
     if (!ready) return;
 
     if (!glRef.current) {
@@ -176,6 +184,8 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
 
   // Typography へ切り替えた瞬間に初期化
   useEffect(() => {
+    // tenichiエフェクトの場合はCanvasを使わないのでスキップ
+    if (effectDef.type === "tenichi") return;
     if (!ready || !glRef.current || !canvasRef.current) return;
     if (effectDef.type === "typography") {
       typoResourcesRef.current = ensureTypographyResources(
@@ -203,6 +213,8 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
   /* ------------------------------- Draw loop -------------------------------- */
 
   useEffect(() => {
+    // tenichiエフェクトの場合はCanvasを使わないのでスキップ
+    if (effectDef.type === "tenichi") return;
     if (!ready || !glRef.current) return;
 
     const gl = glRef.current!;
@@ -313,6 +325,26 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
   }, []);
 
   /* ----------------------------- Render ----------------------------- */
+
+  // tenichiエフェクトの場合はDOM要素で直接表示
+  if (effectDef.type === "tenichi") {
+    return (
+      <img
+        src="/assets/tenichi.gif"
+        alt="Tenichi"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          display: "block",
+          pointerEvents: "none",
+          mixBlendMode: "screen",
+          ...style,
+        }}
+        onPointerDown={handlePointerDown}
+      />
+    );
+  }
 
   return (
     <canvas

@@ -135,7 +135,7 @@
     "playerSignal": "RED",
     "effectSignal": 0,
     "effect": {
-      "type": "normal"
+      "type": "tenichi"
     }
   },
   {

@@ -18,6 +18,7 @@ interface AudioReceiverProps {
   onNoSignalDetected?: () => void; // 信号が検出されていない状態を通知
   permissionsGranted?: boolean; // 権限が許可されているかどうか
   audioStream?: MediaStream | null; // 外部から渡されたマイクストリーム
+  onAudioLevelChange?: (level: number) => void; // 音声レベルの変更を通知
 }
 
 // WebKitAudioContextの型定義
@@ -33,6 +34,7 @@ export function AudioReceiver({
   onNoSignalDetected,
   permissionsGranted = false,
   audioStream = null,
+  onAudioLevelChange,
 }: AudioReceiverProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -126,6 +128,11 @@ export function AudioReceiver({
         if (intensity > overallMaxIntensity) {
           overallMaxIntensity = intensity;
         }
+      }
+
+      // 音声レベルをコールバックで通知
+      if (onAudioLevelChange) {
+        onAudioLevelChange(overallMaxIntensity);
       }
 
       // 音声レベルが一定以上の場合のみログを出力（デバッグ用）

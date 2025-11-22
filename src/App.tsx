@@ -1,12 +1,10 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import {AudioReceiver} from "./components/AudioReceiver";
 import {InitialScreen} from "./components/InitialScreen";
-// ハンバーガーメニュー関連をコメントアウト
-// import {
-//   NewHamburgerMenu,
-//   type SignalLogEntry,
-// } from "./components/NewHamburgerMenu";
-// import type {LayoutMode} from "./components/NewHamburgerMenu";
+import {
+  NewHamburgerMenu,
+  type SignalLogEntry,
+} from "./components/NewHamburgerMenu";
 type LayoutMode =
   | "NoSignal"
   | "BeginPerformance"
@@ -60,16 +58,27 @@ function FullCameraApp() {
   const beginFlagRef = useRef(false);
   const lastEffectIdRef = useRef<number>(-1); // 前回のエフェクトIDを追跡
 
-  // ハンバーガーメニュー用ステート - コメントアウト
-  // const [countdownDate, setCountdownDate] = useState("2025-08-10");
-  // const [countdownTime, setCountdownTime] = useState("00:00");
-  // const [halfTime, setHalfTime] = useState(15);
-  // const [startTime, setStartTime] = useState(
-  //   new Date(`${countdownDate}T${countdownTime}:00`).getTime()
-  // );
-  // const [ellapsedTime, setEllapsedTime] = useState(0);
-  // const isHalfTimeEllapsed = ellapsedTime > 60;
-  const [startTime] = useState(new Date("2025-08-10T00:00:00").getTime());
+  // ハンバーガーメニュー用ステート
+  const [countdownDate, setCountdownDate] = useState("2025-08-10");
+  const [countdownTime, setCountdownTime] = useState("00:00");
+  const [halfTime, setHalfTime] = useState(15);
+  const [signalLog, setSignalLog] = useState<SignalLogEntry[]>([]);
+  const [currentSimulatorIndex, setCurrentSimulatorIndex] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
+
+  // 現在のアクティブなエフェクト信号を計算（オーバーレイ、カメラ、トランジエントのうち最大値を使用）
+  const getCurrentEffectIndex = () => {
+    const maxIndex = Math.max(
+      overlayEffectSignal,
+      cameraEffectSignal,
+      transientEffectSignal
+    );
+    return maxIndex >= 0 ? maxIndex : -1;
+  };
+
+  const [startTime, setStartTime] = useState(
+    new Date(`${countdownDate}T${countdownTime}:00`).getTime()
+  );
 
   // setInterval(() => {
   //   setEllapsedTime(Math.floor((Date.now() - startTime) / 1000 / 60));
@@ -110,6 +119,13 @@ function FullCameraApp() {
     setIsNoSignalDetected(false);
     if (isBeginingSongRef.current) return;
     if (layout === "Countdown") return; // カウントダウン中は何もしない
+
+    // 信号ログに記録
+    const timestamp = new Date().toLocaleTimeString();
+    setSignalLog((prev) => [
+      ...prev,
+      {timestamp, signal: `Signal ${effectId}`},
+    ]);
 
     // 信号受信のたびに、前回のtransient信号から500ms以上経過しているかチェック
     const now = Date.now();
@@ -195,32 +211,42 @@ function FullCameraApp() {
     setIsNoSignalDetected(true);
   };
 
-  // ハンバーガーメニュー関連関数 - コメントアウト
-  // const handleEffectChange = (effect: number) => {
-  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
-  //   setCurrentEffectSignal(effect);
-  // };
+  // ハンバーガーメニュー用の関数
+  const handleBeginSignal = () => {
+    if (layout === "Countdown") return; // カウントダウン中は何もしない
+    const timestamp = new Date().toLocaleTimeString();
+    setSignalLog((prev) => [...prev, {timestamp, signal: "BEGIN"}]);
+    onBeginSignal();
+  };
 
-  // // 新しいハンバーガーメニュー用の関数
-  // const handleBeginSignal = () => {
-  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
-  //   const timestamp = new Date().toLocaleTimeString();
-  //   setSignalLog((prev) => [...prev, {timestamp, signal: "BEGIN"}]);
-  //   onBeginSignal();
-  // };
+  const handleFinishSignal = () => {
+    if (layout === "Countdown") return; // カウントダウン中は何もしない
+    const timestamp = new Date().toLocaleTimeString();
+    setSignalLog((prev) => [...prev, {timestamp, signal: "FINISH"}]);
+    onFinnishSignal();
+  };
 
-  // const handleFinishSignal = () => {
-  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
-  //   const timestamp = new Date().toLocaleTimeString();
-  //   setSignalLog((prev) => [...prev, {timestamp, signal: "FINISH"}]);
-  //   onFinnishSignal();
-  // };
-
-  // const handleSimulatorIndexChange = (index: number) => {
-  //   if (layout === "Countdown") return; // カウントダウン中は何もしない
-  //   beginFlagRef.current = currentEffectSignal !== index ? false : true;
-  //   setCurrentEffectSignal(index);
-  // };
+  const handleSimulatorIndexChange = (index: number) => {
+    if (layout === "Countdown") return; // カウントダウン中は何もしない
+    setCurrentSimulatorIndex(index);
+    // エフェクト信号を設定（0-9の範囲）
+    if (index >= 0 && index <= 2) {
+      setOverlayEffectSignal(index);
+      setCameraEffectSignal(-1);
+      setTransientEffectSignal(-1);
+    } else if (index >= 3 && index <= 5) {
+      setOverlayEffectSignal(-1);
+      setCameraEffectSignal(index);
+      setTransientEffectSignal(-1);
+    } else if (index >= 6 && index <= 8) {
+      setOverlayEffectSignal(-1);
+      setCameraEffectSignal(-1);
+      setTransientEffectSignal(index);
+    }
+    beginFlagRef.current = lastEffectIdRef.current !== index ? false : true;
+    lastEffectIdRef.current = index;
+    setLayout("OnPerformance");
+  };
 
   // 権限要求関数
   const requestPermissions = async () => {
@@ -394,11 +420,10 @@ function FullCameraApp() {
     }
   }, [isNoSignalDetected, onNoSignal]);
 
-  // ハンバーガーメニュー関連useEffect - コメントアウト
-  // // time
-  // useEffect(() => {
-  //   setStartTime(new Date(`${countdownDate}T${countdownTime}:00`).getTime());
-  // }, [countdownDate, countdownTime]);
+  // カウントダウンタイマーの更新
+  useEffect(() => {
+    setStartTime(new Date(`${countdownDate}T${countdownTime}:00`).getTime());
+  }, [countdownDate, countdownTime]);
 
   // カウントダウン完了チェック（1秒ごと）
   useEffect(() => {
@@ -501,6 +526,7 @@ function FullCameraApp() {
           onNoSignalDetected={handleNoSignalDetected}
           permissionsGranted={permissionsGranted}
           audioStream={audioStreamRef.current}
+          onAudioLevelChange={setAudioLevel}
         />
 
         {/* 初期画面 - 信号同期モードで信号が検出されていない時のみ表示 */}
@@ -554,22 +580,23 @@ function FullCameraApp() {
           debugInfo={permissionError?.technicalDetails || null}
         />
 
-        {/* ハンバーガーメニュー - コメントアウト */}
-        {/* <NewHamburgerMenu
+        {/* ハンバーガーメニュー */}
+        <NewHamburgerMenu
           currentState={layout}
-          currentIndex={currentEffectSignal}
+          currentIndex={getCurrentEffectIndex()}
           signalLog={signalLog}
+          audioLevel={audioLevel}
           onBeginSignal={handleBeginSignal}
           onFinishSignal={handleFinishSignal}
           onIndexChange={handleSimulatorIndexChange}
-          currentSimulatorIndex={currentEffectSignal}
+          currentSimulatorIndex={currentSimulatorIndex}
           countdownDate={countdownDate}
           countdownTime={countdownTime}
           halfTime={halfTime}
           onDateChange={setCountdownDate}
           onTimeChange={setCountdownTime}
           onHalfTimeChange={setHalfTime}
-        /> */}
+        />
       </>
     </>
   );

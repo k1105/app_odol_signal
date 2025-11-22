@@ -19,6 +19,9 @@ export interface NewHamburgerMenuProps {
   // Signal Log
   signalLog: SignalLogEntry[];
 
+  // Audio Level
+  audioLevel?: number; // 音声入力レベル (0-1)
+
   // Signal Simulator
   onBeginSignal: () => void;
   onFinishSignal: () => void;
@@ -38,6 +41,7 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
   currentState,
   currentIndex,
   signalLog,
+  audioLevel = 0,
   onBeginSignal,
   onFinishSignal,
   onIndexChange,
@@ -173,6 +177,80 @@ export const NewHamburgerMenu: React.FC<NewHamburgerMenuProps> = ({
               <div style={{marginBottom: "8px"}}>{currentState}</div>
               <div style={{fontSize: "14px", opacity: 0.8}}>
                 index: {currentIndex}
+              </div>
+            </div>
+          </div>
+
+          {/* Audio Level Visualization */}
+          <div style={{marginBottom: "25px"}}>
+            <h4
+              style={{
+                margin: "0 0 15px 0",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#007AFF",
+              }}
+            >
+              Audio Input Level
+            </h4>
+            <div
+              style={{
+                padding: "15px",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "8px",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              {/* Audio Level Bar */}
+              <div
+                style={{
+                  width: "100%",
+                  height: "30px",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  borderRadius: "4px",
+                  overflow: "hidden",
+                  position: "relative",
+                  marginBottom: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${Math.min(audioLevel * 100, 100)}%`,
+                    height: "100%",
+                    backgroundColor:
+                      audioLevel > 0.7
+                        ? "#28a745"
+                        : audioLevel > 0.4
+                        ? "#ffc107"
+                        : "#007AFF",
+                    transition: "width 0.1s ease, background-color 0.1s ease",
+                    borderRadius: "4px",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "white",
+                    textShadow: "1px 1px 2px rgba(0, 0, 0, 0.5)",
+                  }}
+                >
+                  {Math.round(audioLevel * 100)}%
+                </div>
+              </div>
+              {/* Audio Level Text */}
+              <div
+                style={{
+                  fontSize: "12px",
+                  opacity: 0.8,
+                  textAlign: "center",
+                }}
+              >
+                Level: {audioLevel.toFixed(3)}
               </div>
             </div>
           </div>

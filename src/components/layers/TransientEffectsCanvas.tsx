@@ -5,6 +5,12 @@ import {applyYellowStarShader, defaultYellowStarConfig} from "../../utils/yellow
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {sizeCanvasToDisplay} from "../../utils/canvasSizing";
+import {
+  ensureNoiseGridResources,
+  drawNoiseGridToCanvas,
+  uploadNoiseGridTexture,
+  type NoiseGridResources,
+} from "../../utils/noiseGridConfig";
 import indexInformation from "../../../public/index_information.json";
 
 /* ============================= Types & Config ============================= */
@@ -16,7 +22,7 @@ export interface TransientEffectsCanvasProps {
   style?: React.CSSProperties;
 }
 
-type TransientEffectKind = "sparkle" | "yellowStar" | "none";
+type TransientEffectKind = "sparkle" | "yellowStar" | "noiseGrid" | "none";
 
 interface TransientEffectDefinition {
   type: TransientEffectKind;
@@ -51,12 +57,15 @@ const getTransientEffectDefinition = (
   }
 
   const effect = songInfo.effect as JsonEffectDefinition;
-  // sparkle と yellowStar をフィルタリング
+  // sparkle, yellowStar, noiseGrid をフィルタリング
   if (effect.type === "sparkle") {
     return {type: "sparkle"};
   }
   if (effect.type === "yellowStar") {
     return {type: "yellowStar"};
+  }
+  if (effect.type === "noiseGrid") {
+    return {type: "noiseGrid"};
   }
 
   return {type: "none"};
@@ -77,6 +86,7 @@ export const TransientEffectsCanvas: React.FC<
   // Programs
   const sparkleProgramRef = useRef<WebGLProgram | null>(null);
   const yellowStarProgramRef = useRef<WebGLProgram | null>(null);
+  const baseProgramRef = useRef<WebGLProgram | null>(null);
 
   // Sparkle texture
   const starTexRef = useRef<WebGLTexture | null>(null);
@@ -85,6 +95,9 @@ export const TransientEffectsCanvas: React.FC<
   // Yellow Star texture
   const yellowStarTexRef = useRef<WebGLTexture | null>(null);
   const yellowStarImageRef = useRef<HTMLImageElement | null>(null);
+
+  // Noise Grid overlay
+  const noiseGridResourcesRef = useRef<NoiseGridResources | null>(null);
 
   // RAF
   const rafRef = useRef<number>(0);
@@ -105,6 +118,7 @@ export const TransientEffectsCanvas: React.FC<
     glRef.current = result.gl;
     sparkleProgramRef.current = result.programs.sparkleProgram;
     yellowStarProgramRef.current = result.programs.yellowStarProgram;
+    baseProgramRef.current = result.programs.program;
     return true;
   };
 
@@ -123,6 +137,13 @@ export const TransientEffectsCanvas: React.FC<
     const onResize = () => {
       if (!glRef.current || !canvasRef.current) return;
       sizeCanvasToDisplay(canvasRef.current, glRef.current);
+      if (effectDef.type === "noiseGrid" && noiseGridResourcesRef.current) {
+        noiseGridResourcesRef.current = ensureNoiseGridResources(
+          glRef.current,
+          canvasRef.current,
+          noiseGridResourcesRef.current
+        );
+      }
     };
     window.addEventListener("resize", onResize);
 
@@ -192,6 +213,18 @@ export const TransientEffectsCanvas: React.FC<
         yellowStarImageRef.current = img;
       };
       img.src = "/assets/yellow_star.png";
+    }
+  }, [ready, effectDef.type]);
+
+  // Noise Grid リソースの初期化
+  useEffect(() => {
+    if (!ready || !glRef.current || !canvasRef.current) return;
+    if (effectDef.type === "noiseGrid") {
+      noiseGridResourcesRef.current = ensureNoiseGridResources(
+        glRef.current,
+        canvasRef.current,
+        noiseGridResourcesRef.current || undefined
+      );
     }
   }, [ready, effectDef.type]);
 
@@ -284,6 +317,27 @@ export const TransientEffectsCanvas: React.FC<
           gl.disable(gl.BLEND);
         }
 
+        // Noise Grid エフェクト
+        if (
+          effectDef.type === "noiseGrid" &&
+          noiseGridResourcesRef.current &&
+          baseProgramRef.current
+        ) {
+          drawNoiseGridToCanvas(noiseGridResourcesRef.current, canvas);
+          uploadNoiseGridTexture(gl, noiseGridResourcesRef.current);
+
+          // ブレンド有効化（screen ブレンド）
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          drawQuad(
+            gl,
+            baseProgramRef.current,
+            IDENTITY3 as unknown as number[],
+            noiseGridResourcesRef.current.texture
+          );
+          gl.disable(gl.BLEND);
+        }
+
         rafRef.current = requestAnimationFrame(draw);
       } catch {
         rafRef.current = requestAnimationFrame(draw);
@@ -302,10 +356,13 @@ export const TransientEffectsCanvas: React.FC<
         glRef.current.deleteTexture(starTexRef.current);
       if (glRef.current && yellowStarTexRef.current)
         glRef.current.deleteTexture(yellowStarTexRef.current);
+      if (glRef.current && noiseGridResourcesRef.current?.texture)
+        glRef.current.deleteTexture(noiseGridResourcesRef.current.texture);
       starTexRef.current = null;
       starImageRef.current = null;
       yellowStarTexRef.current = null;
       yellowStarImageRef.current = null;
+      noiseGridResourcesRef.current = null;
     };
   }, []);
 

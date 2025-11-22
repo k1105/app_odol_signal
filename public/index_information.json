@@ -10,7 +10,7 @@
     "playerSignal": "BLUE",
     "effectSignal": 1,
     "effect": {
-      "type": "rotatingGrid"
+      "type": "walkman"
     }
   },
   {

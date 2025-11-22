@@ -40,6 +40,7 @@ type OverlayEffectKind =
   | "snakePath"
   | "noiseGrid"
   | "tenichi"
+  | "walkman"
   | "dan"
   | "none";
 
@@ -82,6 +83,7 @@ const getOverlayEffectDefinition = (
     effect.type === "snakePath" ||
     effect.type === "noiseGrid" ||
     effect.type === "tenichi" ||
+    effect.type === "walkman" ||
     effect.type === "dan"
   ) {
     return {type: effect.type as OverlayEffectKind};
@@ -150,8 +152,8 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
   /* --------------------------- Effects lifecycle --------------------------- */
 
   useEffect(() => {
-    // tenichiエフェクトの場合はCanvasを使わないのでスキップ
-    if (effectDef.type === "tenichi") return;
+    // tenichi/walkmanエフェクトの場合はCanvasを使わないのでスキップ
+    if (effectDef.type === "tenichi" || effectDef.type === "walkman") return;
     if (!ready) return;
 
     if (!glRef.current) {
@@ -193,8 +195,8 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
 
   // Typography へ切り替えた瞬間に初期化
   useEffect(() => {
-    // tenichiエフェクトの場合はCanvasを使わないのでスキップ
-    if (effectDef.type === "tenichi") return;
+    // tenichi/walkmanエフェクトの場合はCanvasを使わないのでスキップ
+    if (effectDef.type === "tenichi" || effectDef.type === "walkman") return;
     if (!ready || !glRef.current || !canvasRef.current) return;
     if (effectDef.type === "typography") {
       typoResourcesRef.current = ensureTypographyResources(
@@ -255,8 +257,8 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
   /* ------------------------------- Draw loop -------------------------------- */
 
   useEffect(() => {
-    // tenichiエフェクトの場合はCanvasを使わないのでスキップ
-    if (effectDef.type === "tenichi") return;
+    // tenichi/walkmanエフェクトの場合はCanvasを使わないのでスキップ
+    if (effectDef.type === "tenichi" || effectDef.type === "walkman") return;
     if (!ready || !glRef.current) return;
 
     const gl = glRef.current!;
@@ -414,6 +416,26 @@ export const OverlayPassCanvas: React.FC<OverlayPassCanvasProps> = ({
       <img
         src="/assets/tenichi.gif"
         alt="Tenichi"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          display: "block",
+          pointerEvents: "none",
+          mixBlendMode: "screen",
+          ...style,
+        }}
+        onPointerDown={handlePointerDown}
+      />
+    );
+  }
+
+  // walkmanエフェクトの場合はDOM要素で直接表示
+  if (effectDef.type === "walkman") {
+    return (
+      <img
+        src="/assets/walkman.gif"
+        alt="Walkman"
         style={{
           width: "100%",
           height: "100%",

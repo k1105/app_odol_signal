@@ -99,8 +99,7 @@
     "playerSignal": "YELLOW",
     "effectSignal": 4,
     "effect": {
-      "type": "psychedelic",
-      "psychedelicIntensity": "intense"
+      "type": "mosaic"
     }
   },
   {

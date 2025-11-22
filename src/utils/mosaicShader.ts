@@ -57,17 +57,10 @@ export const mosaicFragmentShader = `
   void main(){
     vec2 uv = v_texCoord;
 
-    // アイドルまたは終了後は素の絵
-    bool inactive = (u_effectStart < 0.0);
-    float elapsed = u_time - u_effectStart;
-    if (inactive || elapsed >= u_effectDuration) {
-      gl_FragColor = texture2D(u_texture, uv);
-      return;
-    }
-
-    // --- スプリング（減衰振動） ---
-    float s = spring(elapsed);                // -1..+1 を振動し 0 へ
-    float env = clamp(abs(s), 0.0, 1.0);
+    // --- 単振動でモザイク強度を変化 ---
+    // sin は -1 から 1 の範囲なので、0.0 から 1.0 にマッピング
+    float oscillation = sin(6.28318530718 * u_springFreq * u_time);
+    float env = (oscillation + 1.0) * 0.5;  // 0.0 から 1.0 の範囲
 
     // --- ピクセルサイズ（画面px基準） ---
     float pixelSizePx = max(1.0, floor(lerpf(u_minPixel, u_maxPixel, env)));
@@ -79,11 +72,9 @@ export const mosaicFragmentShader = `
     vec2 scale = u_viewSize / (u_viewSize + 2.0 * totalPad);
     vec2 uvZoomed = (uv - 0.5) / scale + 0.5;
 
-    // --- シェイク（px→UV）。“拡大後に” 1px動かすUV量 = scale/(sx*view)
+    // --- シェイク（無効化） ---
     vec2 uvPerPixel = scale / (u_ndcScale * u_viewSize);   // [UV / screenPx]
-    float ampPx = u_shakeMax * s;
-    vec2 dxyPx = vec2(cos(u_shakeAngle), sin(u_shakeAngle)) * ampPx;
-    vec2 dxyUV = dxyPx * uvPerPixel;
+    vec2 dxyUV = vec2(0.0);  // シェイク無効化
 
     // --- 画面px基準の量子化（拡大とフィットを考慮） ---
     // content の 1UV あたりの screen px は (u_ndcScale * u_viewSize) / scale
@@ -94,7 +85,7 @@ export const mosaicFragmentShader = `
 
     vec2 pixelatedUV = floor(uvZoomed / stepUV) * stepUV;
 
-    // シェイク適用
+    // シェイク適用（無効化されているので変化なし）
     vec2 finalUV = pixelatedUV + dxyUV;
 
     // サンプリング（端はクランプ）
@@ -120,7 +111,7 @@ export const defaultMosaicConfig: MosaicConfig = {
   maxPixel: 80,
   basePad: 60,
   effectDuration: 0.2,
-  springFreq: 13,
+  springFreq: 1,
   springDamp: 10,
   shakeMax: 36,
   zoomExtraMax: 24,

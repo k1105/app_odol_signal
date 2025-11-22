@@ -8,7 +8,7 @@ const CONFIG = {
   SIGNAL_DURATION: 1.0, // 信号長（秒）
   SAMPLE_RATE: 44100, // サンプリングレート
   FFT_SIZE: 1024, // FFT サイズ
-  DETECTION_THRESHOLD: 0.4, // 検出閾値
+  DETECTION_THRESHOLD: 0.2, // 検出閾値
   SMOOTHING: 0.8, // スムージング係数
 };
 

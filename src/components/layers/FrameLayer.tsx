@@ -12,7 +12,7 @@ interface Circle {
 }
 
 export const FrameLayer = ({currentPlayerSignal}: FrameLayerProps) => {
-  const imagePath = "/assets/frame/base.png";
+  const imagePath = "/assets/frame/base_frame.png";
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const playerNameProgramRef = useRef<WebGLProgram | null>(null);

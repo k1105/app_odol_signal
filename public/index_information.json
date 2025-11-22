@@ -186,7 +186,7 @@
     "playerSignal": "RED",
     "effectSignal": 7,
     "effect": {
-      "type": "normal"
+      "type": "redFlicker"
     }
   },
   {

@@ -145,3 +145,39 @@ export const staticFragmentShader = `
     gl_FragColor = vec4(finalColor, color.a);
   }
 `;
+
+// Red Flicker Shader - 赤色フラットシェーダー
+export const redFlickerVertexShader = `
+  attribute vec2 a_position;
+  attribute vec2 a_texCoord;
+  uniform mat3 u_transform;
+  varying vec2 v_texCoord;
+  
+  void main() {
+    vec2 position = (u_transform * vec3(a_position, 1.0)).xy;
+    gl_Position = vec4(position, 0.0, 1.0);
+    v_texCoord = a_texCoord;
+  }
+`;
+
+export const redFlickerFragmentShader = `
+  precision mediump float;
+  
+  uniform float u_time;
+  uniform float u_fps;
+  
+  varying vec2 v_texCoord;
+  
+  void main() {
+    // 20fps = 50ms間隔で切り替え
+    // u_fps = 20.0 の場合、1秒間に20回切り替え = 0.05秒間隔
+    float frameTime = 1.0 / u_fps;
+    float frameIndex = floor(u_time / frameTime);
+    
+    // 偶数フレームで赤、奇数フレームで透明（ノーマル）
+    float isRed = mod(frameIndex, 2.0) < 1.0 ? 1.0 : 0.0;
+    
+    vec3 redColor = vec3(1.0, 0.0, 0.0); // 赤色
+    gl_FragColor = vec4(redColor, isRed);
+  }
+`;

@@ -1,7 +1,10 @@
 import {useEffect, useMemo, useRef} from "react";
 import {getSparkleConfigForEffect} from "../../utils/sparkleConfig";
 import {applySparkleShader} from "../../utils/sparkleShader";
-import {applyYellowStarShader, defaultYellowStarConfig} from "../../utils/yellowStarShader";
+import {
+  applyYellowStarShader,
+  defaultYellowStarConfig,
+} from "../../utils/yellowStarShader";
 import {drawQuad} from "../../utils/webglUtils";
 import {initWebGL} from "../../utils/webGLInitializer";
 import {sizeCanvasToDisplay} from "../../utils/canvasSizing";
@@ -22,7 +25,12 @@ export interface TransientEffectsCanvasProps {
   style?: React.CSSProperties;
 }
 
-type TransientEffectKind = "sparkle" | "yellowStar" | "noiseGrid" | "none";
+type TransientEffectKind =
+  | "sparkle"
+  | "yellowStar"
+  | "noiseGrid"
+  | "redFlicker"
+  | "none";
 
 interface TransientEffectDefinition {
   type: TransientEffectKind;
@@ -67,6 +75,9 @@ const getTransientEffectDefinition = (
   if (effect.type === "noiseGrid") {
     return {type: "noiseGrid"};
   }
+  if (effect.type === "redFlicker") {
+    return {type: "redFlicker"};
+  }
 
   return {type: "none"};
 };
@@ -77,15 +88,19 @@ const IDENTITY3 = [1, 0, 0, 0, 1, 0, 0, 0, 1] as const;
 
 /* ============================= Component ============================= */
 
-export const TransientEffectsCanvas: React.FC<
-  TransientEffectsCanvasProps
-> = ({currentEffectSignal, currentPlayerSignal, ready, style}) => {
+export const TransientEffectsCanvas: React.FC<TransientEffectsCanvasProps> = ({
+  currentEffectSignal,
+  currentPlayerSignal,
+  ready,
+  style,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
 
   // Programs
   const sparkleProgramRef = useRef<WebGLProgram | null>(null);
   const yellowStarProgramRef = useRef<WebGLProgram | null>(null);
+  const redFlickerProgramRef = useRef<WebGLProgram | null>(null);
   const baseProgramRef = useRef<WebGLProgram | null>(null);
 
   // Sparkle texture
@@ -104,7 +119,10 @@ export const TransientEffectsCanvas: React.FC<
 
   // Effect def
   const effectDef = useMemo<TransientEffectDefinition>(() => {
-    return getTransientEffectDefinition(currentEffectSignal, currentPlayerSignal);
+    return getTransientEffectDefinition(
+      currentEffectSignal,
+      currentPlayerSignal
+    );
   }, [currentEffectSignal, currentPlayerSignal]);
 
   // WebGL init
@@ -118,6 +136,7 @@ export const TransientEffectsCanvas: React.FC<
     glRef.current = result.gl;
     sparkleProgramRef.current = result.programs.sparkleProgram;
     yellowStarProgramRef.current = result.programs.yellowStarProgram;
+    redFlickerProgramRef.current = result.programs.redFlickerProgram;
     baseProgramRef.current = result.programs.program;
     return true;
   };
@@ -289,9 +308,11 @@ export const TransientEffectsCanvas: React.FC<
           yellowStarImageRef.current
         ) {
           const yellowStarNaturalW =
-            yellowStarImageRef.current.naturalWidth || yellowStarImageRef.current.width;
+            yellowStarImageRef.current.naturalWidth ||
+            yellowStarImageRef.current.width;
           const yellowStarNaturalH =
-            yellowStarImageRef.current.naturalHeight || yellowStarImageRef.current.height;
+            yellowStarImageRef.current.naturalHeight ||
+            yellowStarImageRef.current.height;
 
           applyYellowStarShader({
             gl,
@@ -336,6 +357,71 @@ export const TransientEffectsCanvas: React.FC<
             noiseGridResourcesRef.current.texture
           );
           gl.disable(gl.BLEND);
+        }
+
+        // Red Flicker エフェクト
+        if (effectDef.type === "redFlicker" && redFlickerProgramRef.current) {
+          // 20fps = 50ms間隔で切り替え
+          const fps = 20.0;
+          const time = (t % 10000) * 0.001;
+
+          gl.useProgram(redFlickerProgramRef.current);
+
+          const u_time = gl.getUniformLocation(
+            redFlickerProgramRef.current,
+            "u_time"
+          );
+          const u_fps = gl.getUniformLocation(
+            redFlickerProgramRef.current,
+            "u_fps"
+          );
+
+          if (u_time) gl.uniform1f(u_time, time);
+          if (u_fps) gl.uniform1f(u_fps, fps);
+
+          // ダミーテクスチャを作成（drawQuad に必要だが、シェーダーでは使わない）
+          const dummyTexture = gl.createTexture();
+          if (dummyTexture) {
+            gl.bindTexture(gl.TEXTURE_2D, dummyTexture);
+            gl.texImage2D(
+              gl.TEXTURE_2D,
+              0,
+              gl.RGBA,
+              1,
+              1,
+              0,
+              gl.RGBA,
+              gl.UNSIGNED_BYTE,
+              new Uint8Array([255, 255, 255, 255])
+            );
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(
+              gl.TEXTURE_2D,
+              gl.TEXTURE_WRAP_S,
+              gl.CLAMP_TO_EDGE
+            );
+            gl.texParameteri(
+              gl.TEXTURE_2D,
+              gl.TEXTURE_WRAP_T,
+              gl.CLAMP_TO_EDGE
+            );
+
+            // ブレンド有効化
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+            // クワッドを描画（シェーダーが時間に基づいて赤/透明を切り替える）
+            drawQuad(
+              gl,
+              redFlickerProgramRef.current,
+              IDENTITY3 as unknown as number[],
+              dummyTexture
+            );
+
+            gl.disable(gl.BLEND);
+            gl.deleteTexture(dummyTexture);
+          }
         }
 
         rafRef.current = requestAnimationFrame(draw);

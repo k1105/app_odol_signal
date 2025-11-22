@@ -31,6 +31,10 @@ import {
   yellowStarVertexShader,
   yellowStarFragmentShader,
 } from "./yellowStarShader";
+import {
+  redFlickerVertexShader,
+  redFlickerFragmentShader,
+} from "./shaderSources";
 
 export interface WebGLPrograms {
   program: WebGLProgram | null;
@@ -46,6 +50,7 @@ export interface WebGLPrograms {
   playerNameProgram: WebGLProgram | null;
   danProgram: WebGLProgram | null;
   yellowStarProgram: WebGLProgram | null;
+  redFlickerProgram: WebGLProgram | null;
 }
 
 // WebGL初期化
@@ -74,6 +79,7 @@ export const initWebGL = (
           playerNameProgram: null,
           danProgram: null,
           yellowStarProgram: null,
+          redFlickerProgram: null,
         },
       };
     }
@@ -200,6 +206,16 @@ export const initWebGL = (
       gl.FRAGMENT_SHADER,
       yellowStarFragmentShader
     );
+    const redFlickerVertexShaderObj = createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      redFlickerVertexShader
+    );
+    const redFlickerFragmentShaderObj = createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      redFlickerFragmentShader
+    );
 
     if (
       !vertexShader ||
@@ -226,7 +242,9 @@ export const initWebGL = (
       !danVertexShaderObj ||
       !danFragmentShaderObj ||
       !yellowStarVertexShaderObj ||
-      !yellowStarFragmentShaderObj
+      !yellowStarFragmentShaderObj ||
+      !redFlickerVertexShaderObj ||
+      !redFlickerFragmentShaderObj
     ) {
       console.error("Shader creation failed");
       return {
@@ -245,6 +263,7 @@ export const initWebGL = (
           playerNameProgram: null,
           danProgram: null,
           yellowStarProgram: null,
+          redFlickerProgram: null,
         },
       };
     }
@@ -307,6 +326,11 @@ export const initWebGL = (
       yellowStarVertexShaderObj,
       yellowStarFragmentShaderObj
     );
+    const redFlickerProgram = createProgram(
+      gl,
+      redFlickerVertexShaderObj,
+      redFlickerFragmentShaderObj
+    );
 
     if (
       !program ||
@@ -321,7 +345,8 @@ export const initWebGL = (
       !sphereProgram ||
       !playerNameProgram ||
       !danProgram ||
-      !yellowStarProgram
+      !yellowStarProgram ||
+      !redFlickerProgram
     ) {
       console.error("Program creation failed");
       return {
@@ -340,6 +365,7 @@ export const initWebGL = (
           playerNameProgram: null,
           danProgram: null,
           yellowStarProgram: null,
+          redFlickerProgram: null,
         },
       };
     }
@@ -364,6 +390,7 @@ export const initWebGL = (
         playerNameProgram,
         danProgram,
         yellowStarProgram,
+        redFlickerProgram,
       },
     };
   } catch (error) {
@@ -384,6 +411,7 @@ export const initWebGL = (
         playerNameProgram: null,
         danProgram: null,
         yellowStarProgram: null,
+        redFlickerProgram: null,
       },
     };
   }

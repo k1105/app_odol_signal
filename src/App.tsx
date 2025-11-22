@@ -1,13 +1,13 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import {
   AudioReceiver,
-  type AudioAnalysisDiagnostics,
+  // type AudioAnalysisDiagnostics,
 } from "./components/AudioReceiver";
 import {InitialScreen} from "./components/InitialScreen";
-import {
-  NewHamburgerMenu,
-  type NewHamburgerMenuRef,
-} from "./components/NewHamburgerMenu";
+// import {
+//   NewHamburgerMenu,
+//   type NewHamburgerMenuRef,
+// } from "./components/NewHamburgerMenu";
 type LayoutMode =
   | "NoSignal"
   | "BeginPerformance"
@@ -62,24 +62,22 @@ function FullCameraApp() {
   const lastEffectIdRef = useRef<number>(-1); // 前回のエフェクトIDを追跡
 
   // ハンバーガーメニュー用ステート（最小限のみ）
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [audioDiagnostics, setAudioDiagnostics] =
-    useState<AudioAnalysisDiagnostics | null>(null);
-  const hamburgerMenuRef = useRef<NewHamburgerMenuRef>(null);
+  // const [audioLevel, setAudioLevel] = useState(0);
+  // const [audioDiagnostics, setAudioDiagnostics] =
+  //   useState<AudioAnalysisDiagnostics | null>(null);
+  // const hamburgerMenuRef = useRef<NewHamburgerMenuRef>(null);
 
   // 現在のアクティブなエフェクト信号を計算（オーバーレイ、カメラ、トランジエントのうち最大値を使用）
-  const getCurrentEffectIndex = () => {
-    const maxIndex = Math.max(
-      overlayEffectSignal,
-      cameraEffectSignal,
-      transientEffectSignal
-    );
-    return maxIndex >= 0 ? maxIndex : -1;
-  };
+  // const getCurrentEffectIndex = () => {
+  //   const maxIndex = Math.max(
+  //     overlayEffectSignal,
+  //     cameraEffectSignal,
+  //     transientEffectSignal
+  //   );
+  //   return maxIndex >= 0 ? maxIndex : -1;
+  // };
 
-  const [startTime, setStartTime] = useState(
-    new Date("2025-08-10T00:00:00").getTime()
-  );
+  const [startTime] = useState(new Date("2025-08-10T00:00:00").getTime());
 
   // setInterval(() => {
   //   setEllapsedTime(Math.floor((Date.now() - startTime) / 1000 / 60));
@@ -122,11 +120,11 @@ function FullCameraApp() {
     if (layout === "Countdown") return; // カウントダウン中は何もしない
 
     // 信号ログに記録（NewHamburgerMenu 内部で管理）
-    const timestamp = new Date().toLocaleTimeString();
-    hamburgerMenuRef.current?.addSignalLog({
-      timestamp,
-      signal: `Signal ${effectId}`,
-    });
+    // const timestamp = new Date().toLocaleTimeString();
+    // hamburgerMenuRef.current?.addSignalLog({
+    //   timestamp,
+    //   signal: `Signal ${effectId}`,
+    // });
 
     // 信号12は全エフェクト無効化
     if (effectId === 12) {
@@ -215,33 +213,33 @@ function FullCameraApp() {
   };
 
   // ハンバーガーメニュー用の関数（最小限のコールバック）
-  const handleBeginSignalFromMenu = () => {
-    onBeginSignal();
-  };
+  // const handleBeginSignalFromMenu = () => {
+  //   onBeginSignal();
+  // };
 
-  const handleFinishSignalFromMenu = () => {
-    onFinnishSignal();
-  };
+  // const handleFinishSignalFromMenu = () => {
+  //   onFinnishSignal();
+  // };
 
-  const handleEffectIndexChangeFromMenu = (index: number) => {
-    // エフェクト信号を設定（0-9の範囲）
-    if (index >= 0 && index <= 2) {
-      setOverlayEffectSignal(index);
-      setCameraEffectSignal(-1);
-      setTransientEffectSignal(-1);
-    } else if (index >= 3 && index <= 5) {
-      setOverlayEffectSignal(-1);
-      setCameraEffectSignal(index);
-      setTransientEffectSignal(-1);
-    } else if (index >= 6 && index <= 8) {
-      setOverlayEffectSignal(-1);
-      setCameraEffectSignal(-1);
-      setTransientEffectSignal(index);
-    }
-    beginFlagRef.current = lastEffectIdRef.current !== index ? false : true;
-    lastEffectIdRef.current = index;
-    setLayout("OnPerformance");
-  };
+  // const handleEffectIndexChangeFromMenu = (index: number) => {
+  //   // エフェクト信号を設定（0-9の範囲）
+  //   if (index >= 0 && index <= 2) {
+  //     setOverlayEffectSignal(index);
+  //     setCameraEffectSignal(-1);
+  //     setTransientEffectSignal(-1);
+  //   } else if (index >= 3 && index <= 5) {
+  //     setOverlayEffectSignal(-1);
+  //     setCameraEffectSignal(index);
+  //     setTransientEffectSignal(-1);
+  //   } else if (index >= 6 && index <= 8) {
+  //     setOverlayEffectSignal(-1);
+  //     setCameraEffectSignal(-1);
+  //     setTransientEffectSignal(index);
+  //   }
+  //   beginFlagRef.current = lastEffectIdRef.current !== index ? false : true;
+  //   lastEffectIdRef.current = index;
+  //   setLayout("OnPerformance");
+  // };
 
   // 権限要求関数
   const requestPermissions = async () => {
@@ -518,8 +516,8 @@ function FullCameraApp() {
           onNoSignalDetected={handleNoSignalDetected}
           permissionsGranted={permissionsGranted}
           audioStream={audioStreamRef.current}
-          onAudioLevelChange={setAudioLevel}
-          onDiagnosticsChange={setAudioDiagnostics}
+          // onAudioLevelChange={setAudioLevel}
+          // onDiagnosticsChange={setAudioDiagnostics}
         />
 
         {/* 初期画面 - 信号同期モードで信号が検出されていない時のみ表示 */}
@@ -577,7 +575,7 @@ function FullCameraApp() {
         />
 
         {/* ハンバーガーメニュー */}
-        <NewHamburgerMenu
+        {/* <NewHamburgerMenu
           ref={hamburgerMenuRef}
           currentState={layout}
           currentIndex={getCurrentEffectIndex()}
@@ -587,7 +585,7 @@ function FullCameraApp() {
           onFinishSignal={handleFinishSignalFromMenu}
           onEffectIndexChange={handleEffectIndexChangeFromMenu}
           onStartTimeChange={setStartTime}
-        />
+        /> */}
       </>
     </>
   );

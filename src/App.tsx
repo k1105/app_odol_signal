@@ -1,5 +1,8 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import {AudioReceiver} from "./components/AudioReceiver";
+import {
+  AudioReceiver,
+  type AudioAnalysisDiagnostics,
+} from "./components/AudioReceiver";
 import {InitialScreen} from "./components/InitialScreen";
 import {
   NewHamburgerMenu,
@@ -60,6 +63,8 @@ function FullCameraApp() {
 
   // ハンバーガーメニュー用ステート（最小限のみ）
   const [audioLevel, setAudioLevel] = useState(0);
+  const [audioDiagnostics, setAudioDiagnostics] =
+    useState<AudioAnalysisDiagnostics | null>(null);
   const hamburgerMenuRef = useRef<NewHamburgerMenuRef>(null);
 
   // 現在のアクティブなエフェクト信号を計算（オーバーレイ、カメラ、トランジエントのうち最大値を使用）
@@ -512,6 +517,7 @@ function FullCameraApp() {
           permissionsGranted={permissionsGranted}
           audioStream={audioStreamRef.current}
           onAudioLevelChange={setAudioLevel}
+          onDiagnosticsChange={setAudioDiagnostics}
         />
 
         {/* 初期画面 - 信号同期モードで信号が検出されていない時のみ表示 */}
@@ -571,6 +577,7 @@ function FullCameraApp() {
           currentState={layout}
           currentIndex={getCurrentEffectIndex()}
           audioLevel={audioLevel}
+          audioDiagnostics={audioDiagnostics}
           onBeginSignal={handleBeginSignalFromMenu}
           onFinishSignal={handleFinishSignalFromMenu}
           onEffectIndexChange={handleEffectIndexChangeFromMenu}

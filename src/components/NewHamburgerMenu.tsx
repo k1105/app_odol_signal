@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useImperativeHandle, forwardRef} from "react";
+import type {AudioAnalysisDiagnostics} from "./AudioReceiver";
 
 export type LayoutMode =
   | "OnPerformance"
@@ -16,6 +17,7 @@ export interface NewHamburgerMenuProps {
   currentState: string;
   currentIndex: number;
   audioLevel?: number; // 音声入力レベル (0-1)
+  audioDiagnostics?: AudioAnalysisDiagnostics | null; // 音声解析の診断情報
 
   // Signal Simulator - 実際の処理を実行するコールバック
   onBeginSignal: () => void;
@@ -34,6 +36,7 @@ export const NewHamburgerMenu = forwardRef<NewHamburgerMenuRef, NewHamburgerMenu
   currentState,
   currentIndex,
   audioLevel = 0,
+  audioDiagnostics = null,
   onBeginSignal,
   onFinishSignal,
   onEffectIndexChange,
@@ -456,6 +459,201 @@ export const NewHamburgerMenu = forwardRef<NewHamburgerMenuRef, NewHamburgerMenu
                   Send
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Audio Analysis Diagnostics Section */}
+          <div style={{marginBottom: "25px"}}>
+            <h4
+              style={{
+                margin: "0 0 15px 0",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#FF6B6B",
+              }}
+            >
+              Audio Analysis Diagnostics
+            </h4>
+            <div
+              style={{
+                padding: "15px",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "8px",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                fontSize: "12px",
+                maxHeight: "300px",
+                overflowY: "auto",
+              }}
+            >
+              {audioDiagnostics ? (
+                <>
+                  {/* AudioContext State */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>AudioContext State:</strong>{" "}
+                    <span
+                      style={{
+                        color:
+                          audioDiagnostics.audioContextState === "running"
+                            ? "#28a745"
+                            : audioDiagnostics.audioContextState === "suspended"
+                            ? "#ffc107"
+                            : "#dc3545",
+                      }}
+                    >
+                      {audioDiagnostics.audioContextState || "N/A"}
+                    </span>
+                  </div>
+
+                  {/* Sample Rate */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Sample Rate:</strong>{" "}
+                    {audioDiagnostics.sampleRate
+                      ? `${audioDiagnostics.sampleRate} Hz ${
+                          audioDiagnostics.sampleRate !== 44100
+                            ? "(⚠️ Expected: 44100)"
+                            : ""
+                        }`
+                      : "N/A"}
+                  </div>
+
+                  {/* FFT Size */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>FFT Size:</strong> {audioDiagnostics.fftSize || "N/A"}
+                  </div>
+
+                  {/* Buffer Length */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Buffer Length:</strong>{" "}
+                    {audioDiagnostics.bufferLength || "N/A"}
+                  </div>
+
+                  {/* Detection Loop Status */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Detection Loop:</strong>{" "}
+                    <span
+                      style={{
+                        color: audioDiagnostics.isDetectionLoopRunning
+                          ? "#28a745"
+                          : "#dc3545",
+                      }}
+                    >
+                      {audioDiagnostics.isDetectionLoopRunning ? "Running" : "Stopped"}
+                    </span>
+                  </div>
+
+                  {/* Filter Settings */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Filter:</strong>{" "}
+                    {audioDiagnostics.filterFrequency
+                      ? `Freq: ${audioDiagnostics.filterFrequency.toFixed(0)}Hz, Gain: ${audioDiagnostics.filterGain?.toFixed(1) || "N/A"}dB`
+                      : "N/A"}
+                  </div>
+
+                  {/* Detection Threshold */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Detection Threshold:</strong>{" "}
+                    {audioDiagnostics.detectionThreshold.toFixed(2)}
+                  </div>
+
+                  {/* Cooldown Status */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Cooldown:</strong>{" "}
+                    <span
+                      style={{
+                        color: audioDiagnostics.isCooldown ? "#ffc107" : "#28a745",
+                      }}
+                    >
+                      {audioDiagnostics.isCooldown ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  {/* Last Detected Channel */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Last Detected Channel:</strong>{" "}
+                    {audioDiagnostics.detectedChannel !== null
+                      ? `Channel ${audioDiagnostics.detectedChannel} (Intensity: ${audioDiagnostics.maxIntensity.toFixed(3)})`
+                      : "None"}
+                  </div>
+
+                  {/* Last Signal Time */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Last Signal Time:</strong>{" "}
+                    {audioDiagnostics.lastSignalTime
+                      ? `${Math.floor(
+                          (Date.now() - audioDiagnostics.lastSignalTime) / 1000
+                        )}s ago`
+                      : "N/A"}
+                  </div>
+
+                  {/* Overall Max Intensity */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Overall Max Intensity:</strong>{" "}
+                    {audioDiagnostics.overallMaxIntensity.toFixed(3)}
+                  </div>
+
+                  {/* Channel Intensities */}
+                  <div style={{marginBottom: "10px"}}>
+                    <strong>Channel Intensities:</strong>
+                    <div
+                      style={{
+                        marginTop: "5px",
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gap: "5px",
+                        fontSize: "11px",
+                      }}
+                    >
+                      {audioDiagnostics.channelIntensities.map(
+                        (intensity, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              padding: "4px",
+                              backgroundColor:
+                                intensity >= audioDiagnostics.detectionThreshold
+                                  ? "rgba(40, 167, 69, 0.3)"
+                                  : "rgba(255, 255, 255, 0.05)",
+                              borderRadius: "4px",
+                              border:
+                                intensity >= audioDiagnostics.detectionThreshold
+                                  ? "1px solid #28a745"
+                                  : "1px solid rgba(255, 255, 255, 0.1)",
+                            }}
+                          >
+                            <div>
+                              Ch{index}: {intensity.toFixed(3)}
+                            </div>
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "4px",
+                                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                borderRadius: "2px",
+                                marginTop: "2px",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: `${Math.min(intensity * 100, 100)}%`,
+                                  height: "100%",
+                                  backgroundColor:
+                                    intensity >= audioDiagnostics.detectionThreshold
+                                      ? "#28a745"
+                                      : "#007AFF",
+                                  transition: "width 0.1s ease",
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div style={{opacity: 0.6}}>No diagnostics available</div>
+              )}
             </div>
           </div>
 

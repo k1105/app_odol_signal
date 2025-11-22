@@ -12,6 +12,23 @@ const CONFIG = {
   SMOOTHING: 0.8, // スムージング係数
 };
 
+export interface AudioAnalysisDiagnostics {
+  audioContextState: string | null;
+  sampleRate: number | null;
+  fftSize: number | null;
+  channelIntensities: number[]; // 16チャンネルの強度
+  detectedChannel: number | null;
+  maxIntensity: number;
+  detectionThreshold: number;
+  isCooldown: boolean;
+  lastSignalTime: number | null;
+  isDetectionLoopRunning: boolean;
+  filterFrequency: number | null;
+  filterGain: number | null;
+  bufferLength: number | null;
+  overallMaxIntensity: number;
+}
+
 interface AudioReceiverProps {
   onEffectDetected: (effectId: number) => void;
   availableEffects: number; // 利用可能なエフェクトの数を追加
@@ -19,6 +36,7 @@ interface AudioReceiverProps {
   permissionsGranted?: boolean; // 権限が許可されているかどうか
   audioStream?: MediaStream | null; // 外部から渡されたマイクストリーム
   onAudioLevelChange?: (level: number) => void; // 音声レベルの変更を通知
+  onDiagnosticsChange?: (diagnostics: AudioAnalysisDiagnostics) => void; // 診断情報の変更を通知
 }
 
 // WebKitAudioContextの型定義
@@ -35,6 +53,7 @@ export function AudioReceiver({
   permissionsGranted = false,
   audioStream = null,
   onAudioLevelChange,
+  onDiagnosticsChange,
 }: AudioReceiverProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -45,6 +64,22 @@ export function AudioReceiver({
   const effectCooldownRef = useRef<boolean>(false);
   const noSignalTimerRef = useRef<number | null>(null);
   const lastSignalTimeRef = useRef<number>(Date.now());
+  const diagnosticsRef = useRef<AudioAnalysisDiagnostics>({
+    audioContextState: null,
+    sampleRate: null,
+    fftSize: null,
+    channelIntensities: Array(16).fill(0),
+    detectedChannel: null,
+    maxIntensity: 0,
+    detectionThreshold: CONFIG.DETECTION_THRESHOLD,
+    isCooldown: false,
+    lastSignalTime: null,
+    isDetectionLoopRunning: false,
+    filterFrequency: null,
+    filterGain: null,
+    bufferLength: null,
+    overallMaxIntensity: 0,
+  });
 
   // マイクアクセス要求
   const requestMicrophoneAccess = async () => {
@@ -91,6 +126,10 @@ export function AudioReceiver({
 
       microphoneRef.current.connect(filterRef.current);
       filterRef.current.connect(analyserRef.current);
+
+      // 初期診断情報を更新
+      updateDiagnostics();
+
       return true;
     } catch (error) {
       console.error("マイクアクセスエラー:", error);
@@ -102,6 +141,31 @@ export function AudioReceiver({
   const getFrequencyForChannel = (channel: number) => {
     const step = CONFIG.FREQ_RANGE / CONFIG.NUM_CHANNELS;
     return CONFIG.BASE_FREQ + (CONFIG.NUM_CHANNELS - channel) * step;
+  };
+
+  // 診断情報を更新して通知
+  const updateDiagnostics = () => {
+    if (!onDiagnosticsChange) return;
+
+    const diagnostics: AudioAnalysisDiagnostics = {
+      audioContextState: audioContextRef.current?.state || null,
+      sampleRate: audioContextRef.current?.sampleRate || null,
+      fftSize: analyserRef.current?.fftSize || null,
+      channelIntensities: diagnosticsRef.current.channelIntensities,
+      detectedChannel: diagnosticsRef.current.detectedChannel,
+      maxIntensity: diagnosticsRef.current.maxIntensity,
+      detectionThreshold: CONFIG.DETECTION_THRESHOLD,
+      isCooldown: effectCooldownRef.current,
+      lastSignalTime: lastSignalTimeRef.current,
+      isDetectionLoopRunning: detectionIntervalRef.current !== null,
+      filterFrequency: filterRef.current?.frequency.value || null,
+      filterGain: filterRef.current?.gain.value || null,
+      bufferLength: analyserRef.current?.frequencyBinCount || null,
+      overallMaxIntensity: diagnosticsRef.current.overallMaxIntensity,
+    };
+
+    diagnosticsRef.current = diagnostics;
+    onDiagnosticsChange(diagnostics);
   };
 
   // 検出ループ開始
@@ -121,6 +185,7 @@ export function AudioReceiver({
       let maxIntensity = 0;
       let detectedChannel = -1;
       let overallMaxIntensity = 0;
+      const channelIntensities = Array(CONFIG.NUM_CHANNELS).fill(0);
 
       // 全体的な音声レベルをチェック
       for (let i = 0; i < bufferLength; i++) {
@@ -159,6 +224,7 @@ export function AudioReceiver({
             }
           }
           intensity = intensity / (range * 2 + 1) / 255.0;
+          channelIntensities[channel] = intensity;
 
           if (
             intensity >= CONFIG.DETECTION_THRESHOLD &&
@@ -169,6 +235,14 @@ export function AudioReceiver({
           }
         }
       }
+
+      // 診断情報を更新
+      diagnosticsRef.current.channelIntensities = channelIntensities;
+      diagnosticsRef.current.detectedChannel =
+        detectedChannel !== -1 ? detectedChannel : null;
+      diagnosticsRef.current.maxIntensity = maxIntensity;
+      diagnosticsRef.current.overallMaxIntensity = overallMaxIntensity;
+      updateDiagnostics();
 
       // エフェクト検出処理
       if (detectedChannel !== -1 && !effectCooldownRef.current) {
@@ -200,6 +274,7 @@ export function AudioReceiver({
         effectCooldownRef.current = true;
         setTimeout(() => {
           effectCooldownRef.current = false;
+          updateDiagnostics();
         }, 500);
       }
 
@@ -234,6 +309,7 @@ export function AudioReceiver({
       await audioContext.resume();
     }
 
+    updateDiagnostics();
     startDetectionLoop();
   };
 

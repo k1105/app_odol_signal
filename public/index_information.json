@@ -165,8 +165,8 @@
     "playerSignal": "RED",
     "effectSignal": 4,
     "effect": {
-      "type": "psychedelic",
-      "psychedelicIntensity": "intense"
+      "type": "badTV",
+      "badTVIntensity": "heavy"
     }
   },
   {

@@ -61,7 +61,15 @@ export const badTVPresets = {
 };
 
 // エフェクトIDごとのプリセット割り当て
-export const getBadTVConfigForEffect = (effectId: number): BadTVConfig => {
+export const getBadTVConfigForEffect = (
+  effectId: number,
+  intensity?: "subtle" | "moderate" | "heavy" | "extreme"
+): BadTVConfig => {
+  // 強度が指定されている場合は、その強度のプリセットを返す
+  if (intensity && intensity in badTVPresets) {
+    return badTVPresets[intensity];
+  }
+
   // エフェクトIDに基づいて異なるプリセットを割り当て
   switch (effectId) {
     case 0:

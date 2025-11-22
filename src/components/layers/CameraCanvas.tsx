@@ -426,7 +426,10 @@ export const CameraCanvas: React.FC<CameraCanvasProps> = ({
             gl,
             program: badTVProgramRef.current,
             time: (t % 10000) * 0.001,
-            config: getBadTVConfigForEffect(currentEffectSignal),
+            config: getBadTVConfigForEffect(
+              currentEffectSignal,
+              effectDef.badTVIntensity
+            ),
           });
           programToUse = badTVProgramRef.current;
           if (videoTexRef.current && lastNearestRef.current) {

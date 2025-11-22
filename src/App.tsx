@@ -53,8 +53,7 @@ function FullCameraApp() {
   // 各レイヤー用の独立したエフェクト信号
   const [overlayEffectSignal, setOverlayEffectSignal] = useState(-1); // 信号0-2用
   const [cameraEffectSignal, setCameraEffectSignal] = useState(-1); // 信号3-5用
-  const [transientEffectSignal, setTransientEffectSignal] = useState(-1); // 信号6-8用
-  const lastTransientSignalTimeRef = useRef<number | null>(null);
+  const [transientEffectSignal, setTransientEffectSignal] = useState(-1); // 信号6-8A
 
   // エフェクト制御
   const isBeginingSongRef = useRef(false);
@@ -128,16 +127,6 @@ function FullCameraApp() {
       signal: `Signal ${effectId}`,
     });
 
-    // 信号受信のたびに、前回のtransient信号から500ms以上経過しているかチェック
-    const now = Date.now();
-    if (lastTransientSignalTimeRef.current !== null) {
-      if (now - lastTransientSignalTimeRef.current > 1000) {
-        // 500ms以上経過していたら、transientエフェクトを停止
-        setTransientEffectSignal(-1);
-        lastTransientSignalTimeRef.current = null;
-      }
-    }
-
     // 信号12は全エフェクト無効化
     if (effectId === 12) {
       setOverlayEffectSignal(-1);
@@ -191,11 +180,14 @@ function FullCameraApp() {
     }
     // 信号6-8: TransientEffectsCanvas用エフェクト
     else if (effectId >= 6 && effectId <= 8) {
-      // エフェクトIDを設定
-      setTransientEffectSignal(effectId);
-
-      // 最後に信号を受信した時刻を記録
-      lastTransientSignalTimeRef.current = now;
+      if (effectId === 8) {
+        // 信号8は明示的にキャンセル
+        setTransientEffectSignal(-1);
+      } else {
+        // 信号6-7はエフェクトIDを設定
+        setTransientEffectSignal(effectId);
+        // 最後に信号を受信した時刻を記録
+      }
     }
 
     // ハンバーガーメニュー用 - コメントアウト

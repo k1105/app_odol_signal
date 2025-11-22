@@ -87,4 +87,3 @@ export const PerformerName = ({
     </div>
   );
 };
-

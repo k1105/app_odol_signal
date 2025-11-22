@@ -21,6 +21,7 @@ import {CameraStage} from "./components/layers/CameraStage";
 import {Countdown} from "./components/layout/Countdown";
 import {checkMediaPermissions} from "./utils/permissionChecker";
 import {PerformerName} from "./components/PerformerName";
+import {CenteredPerformerName} from "./components/CenteredPerformerName";
 
 /* ---------- 定数 ---------- */
 const NUM_EFFECTS = 9;
@@ -558,6 +559,9 @@ function FullCameraApp() {
               playerSignal={currentPlayerSignal}
               isVisible={showPerformerName}
             />
+
+            {/* 中央に大きく表示されるパフォーマー名 */}
+            <CenteredPerformerName playerSignal={currentPlayerSignal} />
           </>
         )}
 

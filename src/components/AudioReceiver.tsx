@@ -9,7 +9,7 @@ const CONFIG = {
   SAMPLE_RATE: 44100, // サンプリングレート
   FFT_SIZE: 1024, // FFT サイズ
   DETECTION_THRESHOLD: 0.2, // 検出閾値
-  SMOOTHING: 0.8, // スムージング係数
+  SMOOTHING: 0.6, // スムージング係数
 };
 
 export interface ChannelInfo {

@@ -130,3 +130,4 @@ export const applyYellowStarShader = (ctx: YellowStarShaderContext): void => {
   gl.uniform1i(u("u_yellowStarCount"), config.yellowStarCount);
 };
 
+
